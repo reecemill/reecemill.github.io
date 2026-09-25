@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reece Milligan</title>
+<meta name="description" content="Software engineer working in machine learning, orbital mechanics, and applied data science.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  --ground:#F7F8FA;
+  --surface:#FFFFFF;
+  --surface-sunk:#EDF0F4;
+  --line:#D8DEE7;
+  --line-soft:#E6EAF0;
+  --ink:#141A24;
+  --ink-soft:#4A5464;
+  --ink-faint:#6E7889;
+  --accent:#B06E12;
+  --accent-soft:#F5E2C4;
+  --signal:#2E7898;
+  --ok:#2F7A4F;
+  --font-display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --font-body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --measure:64ch;
+  --step--1:0.8125rem;
+  --step-0:1rem;
+  --step-1:1.1875rem;
+  --step-2:1.5rem;
+  --step-3:2rem;
+  --step-4:2.75rem;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0B1220;
+    --surface:#131C2E;
+    --surface-sunk:#0E1524;
+    --line:#26324A;
+    --line-soft:#1C2739;
+    --ink:#E6EBF2;
+    --ink-soft:#A3AEC0;
+    --ink-faint:#7B8699;
+    --accent:#E8A33D;
+    --accent-soft:#3A2C13;
+    --signal:#5FA8C7;
+    --ok:#5BB183;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0B1220;
+  --surface:#131C2E;
+  --surface-sunk:#0E1524;
+  --line:#26324A;
+  --line-soft:#1C2739;
+  --ink:#E6EBF2;
+  --ink-soft:#A3AEC0;
+  --ink-faint:#7B8699;
+  --accent:#E8A33D;
+  --accent-soft:#3A2C13;
+  --signal:#5FA8C7;
+  --ok:#5BB183;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:var(--step-0);
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%}
+[hidden]{display:none!important}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+.wrap{
+  width:100%;
+  max-width:70rem;
+  margin-inline:auto;
+  padding-inline:clamp(1rem,4vw,2.5rem);
+}
+
+/* ---------- masthead ---------- */
+.masthead{
+  position:relative;
+  border-bottom:1px solid var(--line);
+  overflow:hidden;
+  background:var(--surface-sunk);
+}
+.orbit{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+.masthead .wrap{
+  position:relative;
+  padding-block:clamp(3rem,9vw,5.5rem) clamp(2.5rem,7vw,4rem);
+  display:flex;
+  flex-direction:column;
+  gap:1.75rem;
+}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:var(--step--1);
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0;
+}
+.name{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:var(--step-4);
+  line-height:1.08;
+  letter-spacing:-0.02em;
+  text-wrap:balance;
+  margin:0;
+}
+.pitch{
+  max-width:var(--measure);
+  font-size:var(--step-1);
+  color:var(--ink-soft);
+  margin:0;
+  text-wrap:pretty;
+}
+.pitch strong{color:var(--ink);font-weight:600}
+.contact{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.5rem 1.5rem;
+  font-family:var(--font-mono);
+  font-size:var(--step--1);
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.contact a{
+  color:var(--ink-soft);
+  text-decoration-color:var(--line);
+  text-underline-offset:3px;
+}
+.contact a:hover{color:var(--accent);text-decoration-color:var(--accent)}
+.contact li::before{
+  content:"";
+  display:inline-block;
+  width:5px;height:5px;
+  margin-right:0.6rem;
+  vertical-align:middle;
+  background:var(--signal);
+  border-radius:50%;
+}
+
+/* ---------- section scaffolding ---------- */
+section{padding-block:clamp(2.75rem,7vw,4.5rem)}
+section + section{border-top:1px solid var(--line-soft)}
+.section-head{
+  display:flex;
+  align-items:baseline;
+  gap:1rem;
+  margin-bottom:2rem;
+  flex-wrap:wrap;
+}
+.section-head h2{
+  font-family:var(--font-display);
+  font-size:var(--step-2);
+  font-weight:600;
+  letter-spacing:-0.01em;
+  margin:0;
+}
+.section-head .rule{
+  flex:1;
+  height:1px;
+  background:var(--line);
+  min-width:2rem;
+}
+.section-note{
+  font-family:var(--font-mono);
+  font-size:var(--step--1);
+  color:var(--ink-faint);
+}
+
+/* ---------- projects ---------- */
+.projects{display:flex;flex-direction:column;gap:1.25rem}
+.project{
+  border:1px solid var(--line);
+  background:var(--surface);
+  border-radius:4px;
+  padding:1.5rem clamp(1.25rem,3vw,2rem);
+  display:grid;
+  gap:0.875rem;
+}
+.project-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:1rem;
+  flex-wrap:wrap;
+}
+.project h3{
+  font-family:var(--font-display);
+  font-size:var(--step-1);
+  font-weight:600;
+  margin:0;
+  letter-spacing:-0.01em;
+}
+.status{
+  font-family:var(--font-mono);
+  font-size:0.6875rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:0.3rem 0.6rem;
+  border-radius:2px;
+  white-space:nowrap;
+  border:1px solid transparent;
+}
+.status--active{
+  color:var(--accent);
+  background:var(--accent-soft);
+  border-color:color-mix(in srgb,var(--accent) 35%,transparent);
+}
+.status--planned{
+  color:var(--ink-faint);
+  border-color:var(--line);
+}
+.project p{margin:0;max-width:var(--measure);color:var(--ink-soft)}
+.project .problem{color:var(--ink)}
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.4rem;
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.tags li{
+  font-family:var(--font-mono);
+  font-size:0.6875rem;
+  color:var(--ink-faint);
+  border:1px solid var(--line-soft);
+  border-radius:2px;
+  padding:0.2rem 0.5rem;
+}
+.metrics{
+  display:flex;
+  flex-wrap:wrap;
+  gap:1.5rem;
+  padding-top:0.25rem;
+  border-top:1px dashed var(--line-soft);
+  margin-top:0.25rem;
+}
+.metric{display:flex;flex-direction:column;gap:0.1rem}
+.metric dt{
+  font-family:var(--font-mono);
+  font-size:0.6875rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.metric dd{
+  margin:0;
+  font-family:var(--font-mono);
+  font-size:var(--step-0);
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+}
+
+/* ---------- experience ---------- */
+.roles{display:flex;flex-direction:column;gap:2.25rem}
+.role{display:grid;gap:0.75rem}
+.role-top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:1rem;
+  flex-wrap:wrap;
+}
+.role h3{
+  font-family:var(--font-display);
+  font-size:var(--step-1);
+  font-weight:600;
+  margin:0;
+}
+.role .org{color:var(--ink-soft);font-size:var(--step--1)}
+.role .dates{
+  font-family:var(--font-mono);
+  font-size:var(--step--1);
+  color:var(--ink-faint);
+  white-space:nowrap;
+}
+.role ul{
+  margin:0;
+  padding-left:1.1rem;
+  max-width:var(--measure);
+  color:var(--ink-soft);
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+}
+.role li::marker{color:var(--signal)}
+
+/* ---------- skills ---------- */
+.skills{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
+  gap:1.75rem 2.5rem;
+}
+.skill-group h3{
+  font-family:var(--font-mono);
+  font-size:var(--step--1);
+  font-weight:700;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0 0 0.6rem;
+}
+.skill-group p{margin:0;color:var(--ink-soft)}
+
+/* ---------- education ---------- */
+.edu{display:grid;gap:0.4rem;max-width:var(--measure)}
+.edu .degree{font-family:var(--font-display);font-size:var(--step-1);font-weight:600}
+.edu .school{color:var(--ink-soft)}
+.edu .detail{font-family:var(--font-mono);font-size:var(--step--1);color:var(--ink-faint)}
+
+/* ---------- footer ---------- */
+footer{
+  border-top:1px solid var(--line);
+  background:var(--surface-sunk);
+  padding-block:2rem;
+}
+footer .wrap{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:1rem;
+  flex-wrap:wrap;
+  font-family:var(--font-mono);
+  font-size:var(--step--1);
+  color:var(--ink-faint);
+}
+footer a{color:var(--ink-soft);text-underline-offset:3px}
+footer a:hover{color:var(--accent)}
+
+@media (prefers-reduced-motion:no-preference){
+  .orbit-mark{animation:drift 24s linear infinite}
+  @keyframes drift{
+    from{offset-distance:0%}
+    to{offset-distance:100%}
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <svg class="orbit" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <ellipse cx="880" cy="210" rx="430" ry="150"
+             fill="none" stroke="var(--line)" stroke-width="1"
+             transform="rotate(-14 880 210)"/>
+    <ellipse cx="880" cy="210" rx="300" ry="92"
+             fill="none" stroke="var(--line-soft)" stroke-width="1"
+             transform="rotate(-14 880 210)"/>
+    <circle cx="880" cy="210" r="4" fill="var(--signal)"/>
+    <circle class="orbit-mark" cx="0" cy="0" r="3.5" fill="var(--accent)"
+            style="offset-path:path('M 450 210 a 430 150 -14 1 0 860 0 a 430 150 -14 1 0 -860 0');"/>
+  </svg>
+
+  <div class="wrap">
+    <p class="eyebrow">Huntsville, Alabama</p>
+    <h1 class="name">Reece Milligan</h1>
+    <p class="pitch">
+      Software engineer building production systems for the Department of Defense,
+      now working toward <strong>machine learning and applied data science</strong>.
+      Current focus: orbital conjunction analysis &mdash; predicting which satellite
+      close approaches turn dangerous.
+    </p>
+    <ul class="contact">
+      <li><a href="mailto:reecemilligan@gmail.com">reecemilligan@gmail.com</a></li>
+      <li><a href="https://github.com/">GitHub</a></li>
+      <li><a href="https://www.linkedin.com/">LinkedIn</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+<section id="projects">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Projects</h2>
+      <span class="rule"></span>
+      <span class="section-note">Machine learning &amp; applied analysis</span>
+    </div>
+
+    <div class="projects">
+
+      <article class="project">
+        <div class="project-top">
+          <h3>Satellite Collision Risk Prediction</h3>
+          <span class="status status--active">In progress</span>
+        </div>
+        <p class="problem">
+          Satellite operators receive a stream of Conjunction Data Messages in the
+          days before a predicted close approach, each one a refreshed collision
+          estimate. The decision they face is expensive in both directions: a
+          manoeuvre burns fuel and shortens mission life, while ignoring a real
+          threat can cost the spacecraft.
+        </p>
+        <p>
+          Forecasting the final collision risk from data available at least two days
+          out, using real anonymised operational records from ESA missions. The
+          difficulty is not the model &mdash; it is that dangerous events are rare,
+          the costs of the two error types are nowhere near equal, and the naive
+          &ldquo;carry the last estimate forward&rdquo; predictor is genuinely hard
+          to beat.
+        </p>
+        <dl class="metrics">
+          <div class="metric"><dt>Source</dt><dd>ESA Kelvins</dd></div>
+          <div class="metric"><dt>Events</dt><dd>13,154</dd></div>
+          <div class="metric"><dt>Records</dt><dd>162,634</dd></div>
+          <div class="metric"><dt>Features</dt><dd>103</dd></div>
+        </dl>
+        <ul class="tags">
+          <li>Python</li><li>pandas</li><li>scikit-learn</li>
+          <li>Imbalanced classification</li><li>Probability calibration</li>
+          <li>Time series</li>
+        </ul>
+      </article>
+
+      <article class="project">
+        <div class="project-top">
+          <h3>Orbit Determination &amp; Trajectory Prediction</h3>
+          <span class="status status--planned">Planned</span>
+        </div>
+        <p class="problem">
+          Public catalogue data tracks more than 50,000 objects in Earth orbit, but
+          the published element sets degrade in accuracy the further forward they are
+          propagated &mdash; and how fast they degrade depends on orbit regime, solar
+          activity, and the object itself.
+        </p>
+        <p>
+          Modelling that error growth directly: propagating orbits, quantifying how
+          prediction error accumulates over time, and detecting manoeuvres from
+          orbital changes that physics alone does not explain.
+        </p>
+        <ul class="tags">
+          <li>Python</li><li>SGP4</li><li>Orbital mechanics</li>
+          <li>Anomaly detection</li><li>Uncertainty quantification</li>
+        </ul>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section id="experience">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Experience</h2>
+      <span class="rule"></span>
+    </div>
+
+    <div class="roles">
+
+      <article class="role">
+        <div class="role-top">
+          <div>
+            <h3>Computer Scientist / .NET Developer</h3>
+            <div class="org">University of Alabama in Huntsville &mdash; U.S. Army DEVCOM Support</div>
+          </div>
+          <span class="dates">May 2025 &ndash; Present</span>
+        </div>
+        <ul>
+          <li>
+            Research and prototype emerging AI technologies for DoD applications,
+            carrying promising work from concept through to deployed solutions.
+          </li>
+          <li>
+            Built an AI-powered search-logging tool for reviewing and analysing team
+            search activity, and a proof-of-concept workflow automating secure
+            document redaction against privacy and information-security requirements.
+          </li>
+          <li>
+            Develop and maintain enterprise web applications supporting
+            mission-critical Department of Defense systems in C#, .NET, JavaScript,
+            SQL, and REST APIs.
+          </li>
+          <li>
+            Integrate Palantir Vantage APIs into a production DoD application,
+            building on earlier Palantir Foundry data-pipeline work.
+          </li>
+          <li>
+            Write SQL queries and stored procedures and build interactive D3.js and
+            Power BI visualisations that turn raw data into insight for technical and
+            non-technical stakeholders.
+          </li>
+        </ul>
+      </article>
+
+      <article class="role">
+        <div class="role-top">
+          <div>
+            <h3>Undergraduate Research Intern</h3>
+            <div class="org">University of Alabama in Huntsville</div>
+          </div>
+          <span class="dates">Jan 2025 &ndash; May 2025</span>
+        </div>
+        <ul>
+          <li>
+            Co-developed an end-to-end data pipeline in Palantir Foundry covering
+            ingestion, modelling, structuring, and reporting across disparate sources.
+          </li>
+          <li>
+            Built cleaning, preprocessing, and transformation processes that resolved
+            data-quality issues and improved reliability, with visualisations that
+            made results accessible to reviewers.
+          </li>
+          <li>
+            Developed an automated reporting system aggregating individual work logs
+            into structured summaries, reducing manual report-generation time.
+          </li>
+        </ul>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Technical Skills</h2>
+      <span class="rule"></span>
+    </div>
+    <div class="skills">
+      <div class="skill-group">
+        <h3>Languages</h3>
+        <p>Python, SQL, C#, Java, JavaScript</p>
+      </div>
+      <div class="skill-group">
+        <h3>Machine Learning &amp; Data</h3>
+        <p>PyTorch, scikit-learn, pandas, NumPy, Matplotlib, Jupyter, Palantir Foundry, Power BI, D3.js</p>
+      </div>
+      <div class="skill-group">
+        <h3>Engineering</h3>
+        <p>.NET, REST APIs, Django, Git, Azure DevOps, Agile/Scrum, structured testing, SQLite</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="education">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Education</h2>
+      <span class="rule"></span>
+    </div>
+    <div class="edu">
+      <div class="degree">B.S. Computer Science</div>
+      <div class="school">University of Alabama in Huntsville</div>
+      <div class="detail">Conferred May 2025 &middot; GPA 3.364</div>
+      <div class="detail">
+        Coursework: Introduction to AI &middot; Data Mining &middot; Big Data Analysis
+        &middot; Statistics &middot; Algorithms &middot; Linear Algebra
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Reece Milligan &middot; Huntsville, AL</span>
+    <span><a href="mailto:reecemilligan@gmail.com">reecemilligan@gmail.com</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
