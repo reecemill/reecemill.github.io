@@ -267,6 +267,8 @@ section{scroll-margin-top:calc(var(--nav-h) + env(safe-area-inset-top,0px) + 0.5
 .status::before{content:"";width:0.45rem;height:0.45rem;border-radius:50%;background:currentColor}
 .status--active{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
 .status--planned{color:var(--ink-faint);border:1px dashed var(--line)}
+.status--done{color:var(--accent);background:var(--accent-wash)}
+.project-links{display:flex;flex-wrap:wrap;gap:0.6rem;margin-top:0.25rem}
 .project p{margin:0;max-width:var(--measure);color:var(--ink-soft)}
 .project p.lede{color:var(--ink);font-size:1.1rem}
 .stats{
@@ -483,7 +485,7 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
 
 <section id="projects" class="band">
   <div class="wrap">
-    <h2 class="section-title">Projects <small>machine learning &amp; applied analysis</small></h2>
+    <h2 class="section-title">Projects <small>machine learning, data &amp; software</small></h2>
 
     <div class="projects">
 
@@ -521,6 +523,53 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
             <li>Dangerous events are rare, so accuracy is misleading.</li>
             <li>A missed collision and a false alarm cost very different amounts.</li>
             <li>Carrying the last estimate forward is hard to beat. Most competition entries didn't.</li>
+          </ul>
+        </aside>
+      </article>
+
+      <article class="project">
+        <div class="project-main">
+          <div class="project-top">
+            <h3>QuizBank</h3>
+            <span class="status status--done">Complete</span>
+          </div>
+          <p class="lede">
+            A question bank that grades quizzes online, finds broken questions, suggests
+            scores for written answers, and groups questions by topic.
+          </p>
+          <p>
+            Built on my senior design project: I rewrote the Canvas quiz importer as a tested
+            parser and built a Django app where instructors share quizzes that grade
+            themselves. On top of it, item analysis flags questions whose answer key is
+            probably wrong, a ridge model on sentence-embedding features suggests essay
+            scores, and k-means on embeddings groups questions into topics. Each is measured
+            against baselines: the essay model on real graded answers to questions it never
+            saw, the flags on simulated classes where the truth is known, and the topics
+            against the known subjects of MMLU questions.
+          </p>
+          <dl class="stats">
+            <div class="stat"><dt>Essay score r</dt><dd>0.55</dd></div>
+            <div class="stat"><dt>Two humans</dt><dd>0.60</dd></div>
+            <div class="stat"><dt>Topic NMI</dt><dd>0.75</dd></div>
+            <div class="stat"><dt>Tests</dt><dd>116</dd></div>
+          </dl>
+          <ul class="tags">
+            <li>Python</li><li>Django</li><li>PyTorch</li><li>scikit-learn</li>
+            <li>Sentence embeddings</li><li>Item response theory</li><li>Cross-validation</li>
+          </ul>
+          <div class="project-links">
+            <a class="btn btn--ghost" href="https://github.com/reecemill/quizbank">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              <span>View code on GitHub</span>
+            </a>
+          </div>
+        </div>
+        <aside class="note" aria-label="Why it's hard">
+          <h4>Why it's hard</h4>
+          <ul>
+            <li>The grader always meets new questions, so it's tested only on questions it never saw in training.</li>
+            <li>Real class data never says which questions are broken, so the flags are scored on simulated classes.</li>
+            <li>In small classes most answer-key flags were noise until they required significance: 16% to 78% precision at 30 students.</li>
           </ul>
         </aside>
       </article>
