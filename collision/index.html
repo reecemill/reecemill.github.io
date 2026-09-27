@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Collision Risk Explorer</title>
+<meta name="description" content="Explore how a simple rule and a gradient-boosting model forecast satellite collision risk two days out, event by event, on real ESA data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --ground:#F2F3F1;
+  --surface:#FFFFFF;
+  --surface-alt:#E8EAE6;
+  --line:#D5D8D2;
+  --line-soft:#E3E5E0;
+  --ink:#121417;
+  --ink-soft:#4B5058;
+  --ink-faint:#737A83;
+  --accent:#2440E6;
+  --accent-wash:rgba(36,64,230,0.08);
+  --series-model:#2a78d6;
+  --series-rule:#eb6834;
+  --later:#A9AEB5;
+  --later-wash:rgba(115,122,131,0.08);
+  --critical:#d03b3b;
+  --good:#0ca30c;
+  --good-text:#006300;
+  --font-display:"Bricolage Grotesque","Arial Narrow",Helvetica,sans-serif;
+  --font-body:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#101216;
+    --surface:#181B21;
+    --surface-alt:#1E222A;
+    --line:#2D323C;
+    --line-soft:#23272F;
+    --ink:#ECEEF1;
+    --ink-soft:#AAB0BA;
+    --ink-faint:#7F8692;
+    --accent:#7C8CFF;
+    --accent-wash:rgba(124,140,255,0.10);
+    --series-model:#3987e5;
+    --series-rule:#d95926;
+    --later:#5A616C;
+    --later-wash:rgba(127,134,146,0.08);
+    --good-text:#0ca30c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#101216;
+  --surface:#181B21;
+  --surface-alt:#1E222A;
+  --line:#2D323C;
+  --line-soft:#23272F;
+  --ink:#ECEEF1;
+  --ink-soft:#AAB0BA;
+  --ink-faint:#7F8692;
+  --accent:#7C8CFF;
+  --accent-wash:rgba(124,140,255,0.10);
+  --series-model:#3987e5;
+  --series-rule:#d95926;
+  --later:#5A616C;
+  --later-wash:rgba(127,134,146,0.08);
+  --good-text:#0ca30c;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:1.0625rem;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+[hidden]{display:none!important}
+
+.wrap{width:100%;max-width:72rem;margin-inline:auto;padding-inline:clamp(1rem,4vw,2.5rem)}
+
+.topbar{border-bottom:1px solid var(--line);background:var(--ground)}
+.topbar .wrap{height:3.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.topbar a{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-soft);text-decoration:none}
+.topbar a:hover{color:var(--ink)}
+
+header.hero{padding-block:clamp(2rem,6vw,3.5rem) 1.5rem}
+.eyebrow{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-faint);margin:0 0 0.75rem}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,5.5vw,3.25rem);line-height:1.05;letter-spacing:-0.02em;margin:0 0 1rem;font-variation-settings:"wdth" 90}
+.lede{font-size:clamp(1.0625rem,2vw,1.2rem);color:var(--ink-soft);max-width:62ch;margin:0}
+
+section{padding-block:1.5rem}
+h2{font-family:var(--font-display);font-weight:650;font-size:clamp(1.4rem,3vw,1.75rem);letter-spacing:-0.01em;margin:0 0 0.5rem;font-variation-settings:"wdth" 92}
+.section-note{color:var(--ink-soft);max-width:66ch;margin:0 0 1.25rem}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(1rem,2.5vw,1.5rem)}
+
+/* Stat tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem}
+.tile .label{font-size:0.9375rem;color:var(--ink-soft);margin:0 0 0.35rem}
+.tile .value{font-size:clamp(2rem,5vw,2.75rem);font-weight:600;line-height:1.1;margin:0}
+.tile .value small{font-size:0.5em;font-weight:500;color:var(--ink-soft);margin-left:0.35rem}
+.tile .sub{font-size:0.9375rem;color:var(--ink-soft);margin:0.6rem 0 0}
+
+/* Comparison bars */
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1.5rem 2rem}
+.compare h3{font-size:1rem;font-weight:600;margin:0 0 0.15rem}
+.compare p.hint{font-size:0.875rem;color:var(--ink-faint);margin:0 0 0.75rem}
+.bar-row{display:grid;grid-template-columns:4.5rem 1fr;align-items:center;gap:0.75rem;margin-bottom:0.5rem}
+.bar-row .who{font-size:0.875rem;color:var(--ink-soft)}
+.bar-track{position:relative;height:24px;display:flex;align-items:center}
+.bar{height:20px;border-radius:0 4px 4px 0;min-width:2px}
+.bar-value{margin-left:0.5rem;font-size:0.9375rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:0.4rem 1.25rem;font-size:0.875rem;color:var(--ink-soft);margin:0 0 1rem}
+.legend span{display:inline-flex;align-items:center;gap:0.45rem}
+.swatch{width:12px;height:12px;border-radius:3px;display:inline-block}
+.caveat{font-size:0.9375rem;color:var(--ink-soft);border-left:3px solid var(--line);padding-left:0.9rem;margin:1.25rem 0 0;max-width:70ch}
+
+/* Explorer */
+.filters{display:flex;flex-wrap:wrap;gap:0.5rem 1.25rem;align-items:flex-start;margin-bottom:1rem}
+.filter-group{display:flex;flex-direction:column;gap:0.4rem;min-width:0}
+.filter-group .group-label{font-family:var(--font-mono);font-size:0.75rem;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em}
+.chips{display:flex;flex-wrap:wrap;gap:0.4rem}
+.chip{
+  font:inherit;font-size:0.875rem;color:var(--ink-soft);background:var(--surface);
+  border:1px solid var(--line);border-radius:999px;padding:0.3rem 0.75rem;cursor:pointer;
+  display:inline-flex;align-items:center;gap:0.4rem;transition:background-color .15s,color .15s,border-color .15s;
+}
+.chip:hover{color:var(--ink);background:var(--surface-alt)}
+.chip[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-wash)}
+.chip:disabled{opacity:0.45;cursor:default;background:var(--surface)}
+.chip .count{font-variant-numeric:tabular-nums;color:var(--ink-faint)}
+.chip[aria-pressed="true"] .count{color:inherit}
+
+.explorer{display:grid;grid-template-columns:13rem minmax(0,1fr);gap:1rem}
+@media (max-width:52rem){.explorer{grid-template-columns:minmax(0,1fr)}}
+
+.picker{display:flex;flex-direction:column;gap:0.6rem;min-width:0}
+.picker-tools{display:flex;gap:0.5rem}
+.picker input{
+  font:inherit;font-size:0.9375rem;width:100%;min-width:0;padding:0.4rem 0.6rem;border-radius:8px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+}
+.btn{
+  font:inherit;font-size:0.875rem;padding:0.4rem 0.7rem;border-radius:8px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap;
+}
+.btn:hover{background:var(--surface-alt)}
+.event-list{list-style:none;margin:0;padding:0.25rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);max-height:26rem;overflow-y:auto}
+@media (max-width:52rem){.event-list{max-height:11rem}}
+.event-list button{
+  width:100%;text-align:left;font:inherit;font-size:0.875rem;background:none;border:0;border-radius:6px;
+  padding:0.35rem 0.55rem;color:var(--ink-soft);cursor:pointer;display:flex;justify-content:space-between;gap:0.5rem;
+}
+.event-list button:hover{background:var(--surface-alt);color:var(--ink)}
+.event-list button[aria-current="true"]{background:var(--accent-wash);color:var(--accent)}
+.event-list .fr{font-variant-numeric:tabular-nums;color:var(--ink-faint)}
+.list-note{font-size:0.8125rem;color:var(--ink-faint);margin:0}
+
+.detail{min-width:0;display:flex;flex-direction:column;gap:1rem}
+.detail-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0.25rem 1rem}
+.detail-head h3{font-family:var(--font-display);font-size:1.35rem;font-weight:650;margin:0;font-variation-settings:"wdth" 92}
+.detail-head .meta{font-size:0.9375rem;color:var(--ink-soft)}
+
+.chart-wrap{position:relative}
+.chart-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.chart-wrap .axis text,.chart-wrap .annot{font-family:var(--font-body);font-size:12px;fill:var(--ink-faint)}
+.chart-wrap .annot.strong{fill:var(--ink-soft);font-weight:600}
+.chart-legend{display:flex;flex-wrap:wrap;gap:0.4rem 1.25rem;font-size:0.8125rem;color:var(--ink-soft);margin-top:0.5rem}
+.chart-legend span{display:inline-flex;align-items:center;gap:0.45rem}
+.key-line{width:16px;height:2px;border-radius:2px;display:inline-block}
+.key-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+.tooltip{
+  position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:0.5rem 0.7rem;font-size:0.8125rem;line-height:1.45;box-shadow:0 6px 24px -8px rgba(0,0,0,0.25);
+  min-width:11rem;z-index:2;
+}
+.tooltip .tv{font-size:1rem;font-weight:600;color:var(--ink)}
+.tooltip .tl{color:var(--ink-soft)}
+
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:0.75rem}
+.verdict{border:1px solid var(--line-soft);border-radius:10px;padding:0.75rem 0.9rem;background:var(--surface)}
+.verdict .who{display:flex;align-items:center;gap:0.45rem;font-size:0.875rem;color:var(--ink-soft);margin:0 0 0.3rem}
+.verdict .says{font-weight:600;margin:0}
+.verdict .why{font-size:0.875rem;color:var(--ink-soft);margin:0.2rem 0 0}
+.status{display:inline-flex;align-items:center;gap:0.35rem;font-size:0.875rem;font-weight:600;margin-top:0.4rem}
+.status svg{width:16px;height:16px;flex:none}
+.status.ok{color:var(--good-text)}
+.status.bad{color:var(--critical)}
+.status .txt{color:var(--ink)}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:0.5rem 1rem;margin:0;padding:0.75rem 0 0;border-top:1px solid var(--line-soft)}
+.facts div{min-width:0}
+.facts dt{font-size:0.8125rem;color:var(--ink-faint)}
+.facts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+
+.callout{font-size:0.9375rem;background:var(--accent-wash);border-radius:10px;padding:0.65rem 0.9rem;margin:0;color:var(--ink)}
+
+details.table-view summary{cursor:pointer;font-size:0.9375rem;color:var(--ink-soft)}
+details.table-view summary:hover{color:var(--ink)}
+.table-scroll{overflow-x:auto;margin-top:0.5rem}
+table{border-collapse:collapse;font-size:0.875rem;width:100%;min-width:26rem}
+th,td{text-align:right;padding:0.35rem 0.6rem;border-bottom:1px solid var(--line-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--ink-soft)}
+tr.later td{color:var(--ink-faint)}
+
+footer{padding-block:2rem 3rem;color:var(--ink-faint);font-size:0.875rem}
+footer p{margin:0 0 0.4rem;max-width:70ch}
+.loading{color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap">
+    <a href="/">&larr; Reece Milligan</a>
+    <a href="https://github.com/reecemill/satellite-collision-risk">Code on GitHub</a>
+  </div>
+</div>
+
+<main class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Satellite collision risk · results explorer</p>
+    <h1>Can a model forecast a dangerous close approach two days out?</h1>
+    <p class="lede">
+      Satellite operators get a stream of updates before two objects pass close in orbit.
+      Two days before closest approach, they have to decide whether a threat is real.
+      This page compares a simple rule, which assumes the latest risk won't change, with a
+      gradient-boosting model, on real anonymized ESA data.
+    </p>
+  </header>
+
+  <section aria-labelledby="finding">
+    <h2 id="finding">Why the simple rule is hard to beat</h2>
+    <p class="section-note">
+      A quarter of events get no new updates after the two-day mark. For those, the latest
+      risk two days out <em>is</em> the final risk, so the rule can't be wrong. Every one of its
+      mistakes happens on the other events.
+    </p>
+    <div class="tiles" id="group-tiles"><p class="loading">Loading…</p></div>
+  </section>
+
+  <section aria-labelledby="compare-h">
+    <h2 id="compare-h">Model vs rule, where the risk can still change</h2>
+    <p class="section-note" id="compare-note"></p>
+    <div class="card">
+      <div class="legend" aria-hidden="true">
+        <span><i class="swatch" style="background:var(--series-model)"></i>Model (with trend features)</span>
+        <span><i class="swatch" style="background:var(--series-rule)"></i>Rule (latest risk won't change)</span>
+      </div>
+      <div class="compare-grid" id="compare-bars"></div>
+      <p class="caveat" id="compare-caveat"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="explore-h">
+    <h2 id="explore-h">Explore the test events</h2>
+    <p class="section-note">
+      These are the <span id="n-test">2,389</span> events held back from training in one
+      train/test split, so neither forecast had seen them. Pick an outcome, then an event,
+      to see how its risk moved and what each forecast said at the two-day mark.
+    </p>
+
+    <div class="filters" id="filters"></div>
+
+    <div class="explorer">
+      <div class="picker">
+        <div class="picker-tools">
+          <input id="search" type="search" inputmode="numeric" placeholder="Event number" aria-label="Find an event by number">
+          <button class="btn" id="random" type="button">Random</button>
+        </div>
+        <ul class="event-list" id="event-list" aria-label="Events"></ul>
+        <p class="list-note" id="list-note"></p>
+      </div>
+
+      <div class="card detail" id="detail" aria-live="polite">
+        <p class="loading">Loading…</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>
+    Data: <a href="https://kelvins.esa.int/collision-avoidance-challenge/">ESA Kelvins Collision Avoidance Challenge</a>,
+    real anonymized conjunction data messages from ESA missions (2015–2019). Risk is shown as log<sub>10</sub>
+    of the collision probability, so −6 is about 1 in a million and −30 means effectively zero.
+  </p>
+  <p>
+    Method, code, and the full evaluation: <a href="https://github.com/reecemill/satellite-collision-risk">github.com/reecemill/satellite-collision-risk</a>.
+  </p>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (sel) => document.querySelector(sel);
+  const el = (tag, props = {}, ...kids) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") node.className = v;
+      else if (k === "text") node.textContent = v;
+      else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+      else node.setAttribute(k, v);
+    }
+    for (const kid of kids) if (kid != null) node.append(kid);
+    return node;
+  };
+  const SVG = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs = {}) => {
+    const node = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  };
+  const fmtInt = (n) => Math.round(n).toLocaleString("en-US");
+  const fmt = (n, d = 2) => (n < 0 ? "−" : "") + Math.abs(n).toFixed(d);
+
+  // log10 risk -> "1 in N" in words
+  const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+  const sup = (n) => String(n).split("").map((c) => SUP[+c]).join("");
+  function oneIn(risk) {
+    if (risk <= -29.9) return "effectively zero";
+    const n = Math.pow(10, -risk);
+    if (n < 1e6) return "1 in " + fmtInt(Number(n.toPrecision(2)));
+    if (n < 1e9) return "1 in " + Number((n / 1e6).toPrecision(2)) + " million";
+    if (n < 1e12) return "1 in " + Number((n / 1e9).toPrecision(2)) + " billion";
+    return "1 in 10" + sup(Math.round(-risk));
+  }
+
+  // The eight outcome groups: every test event is in exactly one.
+  const GROUPS = [
+    { key: "both-caught", side: "Ended dangerous", label: "Both caught", test: (e) => e.dangerous && e.baseline && e.model },
+    { key: "rule-only-caught", side: "Ended dangerous", label: "Only the rule caught", test: (e) => e.dangerous && e.baseline && !e.model },
+    { key: "model-only-caught", side: "Ended dangerous", label: "Only the model caught", test: (e) => e.dangerous && !e.baseline && e.model },
+    { key: "both-missed", side: "Ended dangerous", label: "Both missed", test: (e) => e.dangerous && !e.baseline && !e.model },
+    { key: "rule-false-alarm", side: "Ended safe", label: "Only the rule raised a false alarm", test: (e) => !e.dangerous && e.baseline && !e.model },
+    { key: "model-false-alarm", side: "Ended safe", label: "Only the model raised a false alarm", test: (e) => !e.dangerous && !e.baseline && e.model },
+    { key: "both-false-alarm", side: "Ended safe", label: "Both raised a false alarm", test: (e) => !e.dangerous && e.baseline && e.model },
+    { key: "neither", side: "Ended safe", label: "Neither flagged it", test: (e) => !e.dangerous && !e.baseline && !e.model },
+  ];
+  const LIST_LIMIT = 200;
+
+  let data, byGroup, byId, state = { group: "rule-false-alarm", id: null };
+
+  fetch("data.json")
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then((d) => { data = d; init(); })
+    .catch(() => {
+      $("#group-tiles").replaceChildren(el("p", { class: "loading", text: "Couldn't load the data. Try reloading the page." }));
+      $("#detail").replaceChildren();
+    });
+
+  function init() {
+    byId = new Map(data.events.map((e) => [e.id, e]));
+    byGroup = new Map(GROUPS.map((g) => [g.key, data.events.filter(g.test)]));
+    $("#n-test").textContent = fmtInt(data.events.length);
+    renderTiles();
+    renderCompare();
+    renderFilters();
+    const start = byGroup.get(state.group);
+    selectGroup(state.group, pickInteresting(start));
+    $("#random").addEventListener("click", () => {
+      const list = byGroup.get(state.group);
+      if (list.length) selectEvent(list[Math.floor(Math.random() * list.length)].id);
+    });
+    $("#search").addEventListener("change", (ev) => {
+      const e = byId.get(Number(ev.target.value.trim()));
+      if (!e) { $("#list-note").textContent = "No test event with that number."; return; }
+      const g = GROUPS.find((g) => g.test(e));
+      selectGroup(g.key, e.id);
+    });
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => state.id != null && renderChart(byId.get(state.id)), 120);
+    });
+  }
+
+  // Start on an event whose risk visibly fell after looking dangerous.
+  function pickInteresting(list) {
+    const scored = list
+      .filter((e) => e.can_change)
+      .map((e) => ({ e, drop: e.risk_max - e.updates[e.updates.length - 1][1] }))
+      .sort((a, b) => b.drop - a.drop);
+    return (scored[0] || { e: list[0] }).e?.id ?? null;
+  }
+
+  function renderTiles() {
+    const g = data.groups;
+    const tile = (label, value, unit, sub) =>
+      el("div", { class: "card tile" },
+        el("p", { class: "label", text: label }),
+        el("p", { class: "value" }, value, el("small", { text: unit })),
+        el("p", { class: "sub", text: sub }));
+    $("#group-tiles").replaceChildren(
+      tile("No updates after the two-day mark", fmtInt(g.no_more_updates.events), "events",
+        `Includes ${g.no_more_updates.dangerous} of the ${data.dangerous_total} dangerous events. The rule gets every one right: F2 ${g.no_more_updates.f2.toFixed(2)}.`),
+      tile("Risk can still change after the two-day mark", fmtInt(g.can_change.events), "events",
+        `Only ${g.can_change.dangerous} dangerous. The rule misses ${g.can_change.missed} and raises ${g.can_change.false_alarms} false alarms: F2 ${g.can_change.f2.toFixed(2)}.`)
+    );
+  }
+
+  function renderCompare() {
+    const s = data.five_splits.with_trends;
+    $("#compare-note").textContent =
+      `Averages over five different train/test splits, on the events where the risk can still change. ` +
+      `F2 is ${s.model_can_change.toFixed(3)} for the model and ${s.baseline_can_change.toFixed(3)} for the rule: a tie. ` +
+      `They get there differently.`;
+    const block = (title, hint, model, rule) => {
+      const max = Math.max(model, rule) * 1.15;
+      const row = (who, v, color) => el("div", { class: "bar-row" },
+        el("span", { class: "who", text: who }),
+        el("div", { class: "bar-track" },
+          el("div", { class: "bar", style: `width:${(v / max) * 100}%;background:${color}` }),
+          el("span", { class: "bar-value", text: v.toFixed(1) })));
+      return el("div", { class: "compare", role: "group", "aria-label": `${title}: model ${model.toFixed(1)}, rule ${rule.toFixed(1)}` },
+        el("h3", { text: title }), el("p", { class: "hint", text: hint }),
+        row("Model", model, "var(--series-model)"), row("Rule", rule, "var(--series-rule)"));
+    };
+    $("#compare-bars").replaceChildren(
+      block("False alarms", "Per test split. Fewer is better.", s.model_false_alarms, s.baseline_false_alarms),
+      block("Missed threats", "Per test split. Fewer is better.", s.model_misses, s.baseline_misses)
+    );
+    $("#compare-caveat").textContent =
+      "The model raises about a third fewer false alarms but misses a few more threats. " +
+      "With only about 18 dangerous events per test split in this group, the difference in F2 is within the noise, " +
+      "and a newer scikit-learn version shifts it the other way. The trade itself held in every version tested.";
+  }
+
+  function renderFilters() {
+    const sides = ["Ended dangerous", "Ended safe"];
+    $("#filters").replaceChildren(...sides.map((side) =>
+      el("div", { class: "filter-group", role: "group", "aria-label": side },
+        el("span", { class: "group-label", text: side }),
+        el("div", { class: "chips" }, ...GROUPS.filter((g) => g.side === side).map((g) => {
+          const n = byGroup.get(g.key).length;
+          const b = el("button", { class: "chip", type: "button", "data-key": g.key, "aria-pressed": "false",
+            onclick: () => selectGroup(g.key) },
+            el("span", { text: g.label }), el("span", { class: "count", text: fmtInt(n) }));
+          if (!n) b.disabled = true;
+          return b;
+        })))));
+  }
+
+  function selectGroup(key, id) {
+    state.group = key;
+    for (const chip of document.querySelectorAll(".chip")) chip.setAttribute("aria-pressed", String(chip.dataset.key === key));
+    const list = byGroup.get(key);
+    const shown = list.slice(0, LIST_LIMIT);
+    if (id != null && !shown.some((e) => e.id === id)) shown.unshift(byId.get(id));
+    $("#event-list").replaceChildren(...shown.map((e) => el("li", {},
+      el("button", { type: "button", "data-id": String(e.id), onclick: () => selectEvent(e.id) },
+        el("span", { text: `Event ${e.id}` }),
+        el("span", { class: "fr", text: fmt(e.updates[e.updates.length - 1][1], 1) })))));
+    $("#list-note").textContent = list.length > LIST_LIMIT
+      ? `Showing ${LIST_LIMIT} of ${fmtInt(list.length)}. Search by number or use Random for the rest.`
+      : `${fmtInt(list.length)} event${list.length === 1 ? "" : "s"}. The number on the right is the final risk.`;
+    if (list.length) selectEvent(id ?? list[0].id);
+  }
+
+  function selectEvent(id) {
+    state.id = id;
+    for (const b of document.querySelectorAll("#event-list button")) {
+      const on = Number(b.dataset.id) === id;
+      b.setAttribute("aria-current", String(on));
+      if (on) b.scrollIntoView({ block: "nearest" });
+    }
+    renderDetail(byId.get(id));
+  }
+
+  const ICON_OK = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICON_BAD = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
+  function outcome(flagged, dangerous) {
+    if (flagged && dangerous) return { ok: true, text: "Correct: caught a real threat" };
+    if (!flagged && !dangerous) return { ok: true, text: "Correct: no alarm needed" };
+    if (flagged) return { ok: false, text: "False alarm" };
+    return { ok: false, text: "Missed a real threat" };
+  }
+
+  function statusLine(o) {
+    const s = el("span", { class: "status " + (o.ok ? "ok" : "bad") });
+    s.innerHTML = o.ok ? ICON_OK : ICON_BAD; // static icon markup only
+    s.append(el("span", { class: "txt", text: o.text }));
+    return s;
+  }
+
+  function renderDetail(e) {
+    const ups = e.updates;
+    const known = ups.filter((u) => u[0] >= data.forecast_days);
+    const latest = known[known.length - 1];
+    const final = ups[ups.length - 1];
+
+    const head = el("div", { class: "detail-head" },
+      el("h3", { text: `Event ${e.id}` }),
+      el("span", { class: "meta", text: `${e.object.toLowerCase()} · ${ups.length} updates · ended ${e.dangerous ? "dangerous" : "safe"} (final risk ${fmt(final[1])})` }));
+
+    const chart = el("div", { class: "chart-wrap", id: "chart" });
+    const legend = el("div", { class: "chart-legend", "aria-hidden": "true" },
+      el("span", {}, el("i", { class: "key-line", style: "background:var(--ink)" }), "Known at the two-day mark"),
+      el("span", {}, el("i", { class: "key-line", style: "background:var(--later)" }), "Arrived later (hidden from both forecasts)"),
+      el("span", {}, el("i", { class: "key-line", style: "background:var(--critical)" }), "Danger line (−6)"));
+
+    const rule = el("div", { class: "verdict" },
+      el("p", { class: "who" }, el("i", { class: "swatch", style: "background:var(--series-rule)" }), "Rule"),
+      el("p", { class: "says", text: e.baseline ? "Flag it" : "Don't flag it" }),
+      el("p", { class: "why", text: `Latest known risk ${fmt(latest[1])} is ${e.baseline ? "at or above" : "below"} −6.` }),
+      statusLine(outcome(e.baseline, e.dangerous)));
+    const model = el("div", { class: "verdict" },
+      el("p", { class: "who" }, el("i", { class: "swatch", style: "background:var(--series-model)" }), "Model"),
+      el("p", { class: "says", text: e.model ? "Flag it" : "Don't flag it" }),
+      el("p", { class: "why", text: `Probability ${e.prob.toFixed(3)}, ${e.model ? "at or above" : "below"} its cutoff of ${data.cutoff.toFixed(2)}.` }),
+      statusLine(outcome(e.model, e.dangerous)));
+
+    const facts = el("dl", { class: "facts", "aria-label": "What the forecasts could see at the two-day mark" },
+      ...[
+        ["Latest known risk", fmt(latest[1])],
+        ["Change since previous", e.risk_change == null ? "n/a (first update)" : (e.risk_change > 0 ? "+" : "") + fmt(e.risk_change)],
+        ["Highest risk so far", fmt(e.risk_max)],
+        ["Updates so far", String(e.n_updates)],
+      ].map(([k, v]) => el("div", {}, el("dt", { text: k }), el("dd", { text: v }))));
+
+    const kids = [head, chart, legend, el("div", { class: "verdicts" }, rule, model), facts];
+    if (!e.can_change) {
+      kids.splice(2, 0, el("p", { class: "callout",
+        text: "No updates arrived after the two-day mark, so the latest known risk is also the final risk. The rule is right by definition here." }));
+    }
+    kids.push(tableView(e));
+    $("#detail").replaceChildren(...kids);
+    renderChart(e);
+  }
+
+  function tableView(e) {
+    const rows = e.updates.map((u) => el("tr", { class: u[0] >= data.forecast_days ? "" : "later" },
+      el("td", { text: u[0].toFixed(2) }),
+      el("td", { text: fmt(u[1]) }),
+      el("td", { text: oneIn(u[1]) }),
+      el("td", { text: u[2] == null ? "n/a" : fmtInt(u[2]) + " m" }),
+      el("td", { text: u[0] >= data.forecast_days ? "Yes" : "No" })));
+    return el("details", { class: "table-view" },
+      el("summary", { text: "Show the updates as a table" }),
+      el("div", { class: "table-scroll" },
+        el("table", {},
+          el("thead", {}, el("tr", {}, ...["Days before", "Risk (log10)", "Chance", "Miss distance", "Known at two days?"].map((h) => el("th", { text: h })))),
+          el("tbody", {}, ...rows))));
+  }
+
+  function renderChart(e) {
+    const wrap = $("#chart");
+    if (!wrap) return;
+    const W = Math.max(300, wrap.clientWidth || 600);
+    const H = W < 520 ? 260 : 320;
+    const m = { top: 18, right: 16, bottom: 40, left: 44 };
+    const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+    const ups = e.updates;
+
+    const risks = ups.map((u) => u[1]);
+    let lo = Math.min(...risks, -9), hi = Math.max(...risks, -4);
+    lo = Math.max(-30, Math.floor(lo - 1)); hi = Math.min(0, Math.ceil(hi + 0.5));
+    const span = hi - lo;
+    const step = span > 16 ? 5 : span > 8 ? 2 : 1;
+
+    const X0 = 7.2, X1 = -0.3;
+    const x = (t) => m.left + ((X0 - Math.min(X0, Math.max(X1, t))) / (X0 - X1)) * iw;
+    const y = (r) => m.top + ((hi - r) / (hi - lo)) * ih;
+    const F = data.forecast_days;
+
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": `Risk of event ${e.id} over time: ${ups.length} updates, latest known at the two-day mark ${fmt(ups.filter((u) => u[0] >= F).slice(-1)[0][1])}, final ${fmt(ups[ups.length - 1][1])}. Full values in the table below.` });
+
+    // "After the forecast point" wash
+    svg.append(svgEl("rect", { x: x(F), y: m.top, width: x(X1) - x(F), height: ih, fill: "var(--later-wash)" }));
+
+    // Grid + y axis
+    const gy = svgEl("g", { class: "axis" });
+    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+      gy.append(svgEl("line", { x1: m.left, x2: m.left + iw, y1: y(v), y2: y(v), stroke: "var(--line-soft)", "stroke-width": 1 }));
+      const t = svgEl("text", { x: m.left - 8, y: y(v) + 4, "text-anchor": "end" });
+      t.textContent = v === 0 ? "0" : "−" + Math.abs(v);
+      gy.append(t);
+    }
+    const yl = svgEl("text", { x: 0, y: 0, transform: `translate(12 ${m.top + ih / 2}) rotate(-90)`, "text-anchor": "middle" });
+    yl.textContent = "Risk (log10)";
+    gy.append(yl);
+    svg.append(gy);
+
+    // x axis
+    const gx = svgEl("g", { class: "axis" });
+    gx.append(svgEl("line", { x1: m.left, x2: m.left + iw, y1: m.top + ih, y2: m.top + ih, stroke: "var(--line)", "stroke-width": 1 }));
+    for (let d = 7; d >= 0; d--) {
+      const t = svgEl("text", { x: x(d), y: m.top + ih + 18, "text-anchor": "middle" });
+      t.textContent = String(d);
+      gx.append(t);
+    }
+    const xl = svgEl("text", { x: m.left + iw / 2, y: H - 4, "text-anchor": "middle" });
+    xl.textContent = "Days before closest approach";
+    gx.append(xl);
+    svg.append(gx);
+
+    // Forecast point + danger line
+    svg.append(svgEl("line", { x1: x(F), x2: x(F), y1: m.top, y2: m.top + ih, stroke: "var(--ink-faint)", "stroke-width": 1 }));
+    const fl = svgEl("text", { class: "annot strong", x: x(F) + 6, y: m.top + 12 });
+    fl.textContent = "Two-day mark";
+    svg.append(fl);
+    if (-6 >= lo && -6 <= hi) {
+      svg.append(svgEl("line", { x1: m.left, x2: m.left + iw, y1: y(-6), y2: y(-6), stroke: "var(--critical)", "stroke-width": 1.5 }));
+    }
+
+    // Risk line: known part in ink, later part gray
+    const known = ups.filter((u) => u[0] >= F), later = ups.filter((u) => u[0] < F);
+    const path = (pts) => pts.map((u, i) => `${i ? "L" : "M"}${x(u[0]).toFixed(1)},${y(u[1]).toFixed(1)}`).join("");
+    if (later.length) {
+      svg.append(svgEl("path", { d: path([known[known.length - 1], ...later]), fill: "none", stroke: "var(--later)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    }
+    svg.append(svgEl("path", { d: path(known), fill: "none", stroke: "var(--ink)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    for (const u of ups) {
+      svg.append(svgEl("circle", { cx: x(u[0]), cy: y(u[1]), r: 4, fill: u[0] >= F ? "var(--ink)" : "var(--later)", stroke: "var(--surface)", "stroke-width": 2 }));
+    }
+
+    // Selective labels: the value both forecasts saw, and the final value
+    const lastKnown = known[known.length - 1], finalU = ups[ups.length - 1];
+    const label = (u, text, anchor, dy) => {
+      const t = svgEl("text", { class: "annot strong", x: x(u[0]) + (anchor === "end" ? -8 : 8), y: y(u[1]) + dy, "text-anchor": anchor });
+      t.textContent = text;
+      svg.append(t);
+    };
+    label(lastKnown, `Latest known ${fmt(lastKnown[1], 1)}`, x(lastKnown[0]) > m.left + iw * 0.55 ? "end" : "start", -10);
+    if (finalU !== lastKnown) label(finalU, `Final ${fmt(finalU[1], 1)}`, "end", y(finalU[1]) < m.top + 30 ? 18 : -10);
+
+    // Hover: crosshair snaps to the nearest update
+    const cross = svgEl("line", { y1: m.top, y2: m.top + ih, stroke: "var(--ink-faint)", "stroke-width": 1, visibility: "hidden" });
+    const ring = svgEl("circle", { r: 6, fill: "none", stroke: "var(--accent)", "stroke-width": 2, visibility: "hidden" });
+    svg.append(cross, ring);
+    const hit = svgEl("rect", { x: m.left, y: m.top, width: iw, height: ih, fill: "transparent", tabindex: "0",
+      "aria-label": "Chart hover area. Use the left and right arrow keys to step through updates." });
+    svg.append(hit);
+
+    const tip = el("div", { class: "tooltip", hidden: "" });
+    let focusIdx = ups.length - 1;
+    const show = (i) => {
+      const u = ups[i];
+      cross.setAttribute("x1", x(u[0])); cross.setAttribute("x2", x(u[0])); cross.setAttribute("visibility", "visible");
+      ring.setAttribute("cx", x(u[0])); ring.setAttribute("cy", y(u[1])); ring.setAttribute("visibility", "visible");
+      tip.replaceChildren(
+        el("div", { class: "tv", text: fmt(u[1]) }),
+        el("div", { class: "tl", text: `${oneIn(u[1])} chance of collision` }),
+        el("div", { class: "tl", text: `${u[0].toFixed(2)} days before closest approach` }),
+        el("div", { class: "tl", text: `Miss distance ${u[2] == null ? "n/a" : fmtInt(u[2]) + " m"}` }),
+        el("div", { class: "tl", text: u[0] >= F ? "Known at the two-day mark" : "Arrived after the two-day mark" }));
+      tip.hidden = false;
+      const scale = wrap.clientWidth / W;
+      const px = x(u[0]) * scale, py = y(u[1]) * scale;
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let left = px + 14; if (left + tw > wrap.clientWidth) left = px - tw - 14;
+      let top = py - th - 10; if (top < 0) top = py + 14;
+      tip.style.left = Math.max(0, left) + "px"; tip.style.top = top + "px";
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); ring.setAttribute("visibility", "hidden"); };
+    const nearest = (clientX) => {
+      const r = svg.getBoundingClientRect();
+      const px = ((clientX - r.left) / r.width) * W;
+      let best = 0, bd = Infinity;
+      ups.forEach((u, i) => { const d = Math.abs(x(u[0]) - px); if (d < bd) { bd = d; best = i; } });
+      return best;
+    };
+    hit.addEventListener("pointermove", (ev) => { focusIdx = nearest(ev.clientX); show(focusIdx); });
+    hit.addEventListener("pointerleave", hide);
+    hit.addEventListener("focus", () => show(focusIdx));
+    hit.addEventListener("blur", hide);
+    hit.addEventListener("keydown", (ev) => {
+      if (ev.key === "ArrowLeft") { focusIdx = Math.max(0, focusIdx - 1); show(focusIdx); ev.preventDefault(); }
+      if (ev.key === "ArrowRight") { focusIdx = Math.min(ups.length - 1, focusIdx + 1); show(focusIdx); ev.preventDefault(); }
+      if (ev.key === "Escape") hide();
+    });
+
+    wrap.replaceChildren(svg, tip);
+  }
+})();
+</script>
+</body>
+</html>
