@@ -493,7 +493,7 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
         <div class="project-main">
           <div class="project-top">
             <h3>Satellite Collision Risk Prediction</h3>
-            <span class="status status--active">In progress</span>
+            <span class="status status--done">Complete</span>
           </div>
           <p class="lede">
             Forecasting whether a satellite close approach becomes dangerous, using only
@@ -506,23 +506,38 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
             real threat can cost the spacecraft. The work uses real, anonymised operational
             records from ESA missions.
           </p>
+          <p>
+            The simple rule of assuming the latest risk won't change is right by definition
+            for the quarter of events that get no updates after the forecast point. On the
+            rest it scores an F2 of only 0.49. A gradient-boosting model, including trend
+            features for how the risk and miss distance have been moving, doesn't beat it
+            overall, but consistently raises at least a third fewer false alarms at the cost
+            of a few more misses. Every result is averaged over five train/test splits, after
+            a single split showed a win that turned out to be luck.
+          </p>
           <dl class="stats">
-            <div class="stat"><dt>Source</dt><dd>ESA</dd></div>
             <div class="stat"><dt>Events</dt><dd>13,154</dd></div>
-            <div class="stat"><dt>Records</dt><dd>162,634</dd></div>
-            <div class="stat"><dt>Features</dt><dd>103</dd></div>
+            <div class="stat"><dt>Updates</dt><dd>162,634</dd></div>
+            <div class="stat"><dt>Fewer false alarms</dt><dd>33%</dd></div>
+            <div class="stat"><dt>Splits checked</dt><dd>5</dd></div>
           </dl>
           <ul class="tags">
             <li>Python</li><li>pandas</li><li>scikit-learn</li>
-            <li>Imbalanced classification</li><li>Calibration</li><li>Time series</li>
+            <li>Imbalanced classification</li><li>Gradient boosting</li><li>Cross-validation</li>
           </ul>
+          <div class="project-links">
+            <a class="btn btn--ghost" href="https://github.com/reecemill/satellite-collision-risk">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              <span>View code on GitHub</span>
+            </a>
+          </div>
         </div>
         <aside class="note" aria-label="Why it's hard">
           <h4>Why it's hard</h4>
           <ul>
             <li>Dangerous events are rare, so accuracy is misleading.</li>
             <li>A missed collision and a false alarm cost very different amounts.</li>
-            <li>Carrying the last estimate forward is hard to beat. Most competition entries didn't.</li>
+            <li>For a quarter of events the latest estimate is already final, so carrying it forward is hard to beat.</li>
           </ul>
         </aside>
       </article>
