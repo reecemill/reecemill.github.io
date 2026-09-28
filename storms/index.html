@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Storm Forecast Results</title>
+<meta name="description" content="How good is NOAA's geomagnetic storm forecast, and can a model trained on 30 years of solar wind and Kp data beat it? Tested on 2022-2025.">
+<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --ground:#F2F3F1;
+  --surface:#FFFFFF;
+  --surface-alt:#E8EAE6;
+  --line:#D5D8D2;
+  --line-soft:#E3E5E0;
+  --ink:#121417;
+  --ink-soft:#4B5058;
+  --ink-faint:#737A83;
+  --accent:#2440E6;
+  --accent-wash:rgba(36,64,230,0.08);
+  --s1:#2a78d6;
+  --s2:#eb6834;
+  --s3:#1baf7a;
+  --s4:#eda100;
+  --s5:#e87ba4;
+  --font-display:"Bricolage Grotesque","Arial Narrow",Helvetica,sans-serif;
+  --font-body:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#101216;
+    --surface:#181B21;
+    --surface-alt:#1E222A;
+    --line:#2D323C;
+    --line-soft:#23272F;
+    --ink:#ECEEF1;
+    --ink-soft:#AAB0BA;
+    --ink-faint:#7F8692;
+    --accent:#7C8CFF;
+    --accent-wash:rgba(124,140,255,0.10);
+    --s1:#3987e5;
+    --s2:#d95926;
+    --s3:#199e70;
+    --s4:#c98500;
+    --s5:#d55181;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#101216;
+  --surface:#181B21;
+  --surface-alt:#1E222A;
+  --line:#2D323C;
+  --line-soft:#23272F;
+  --ink:#ECEEF1;
+  --ink-soft:#AAB0BA;
+  --ink-faint:#7F8692;
+  --accent:#7C8CFF;
+  --accent-wash:rgba(124,140,255,0.10);
+  --s1:#3987e5;
+  --s2:#d95926;
+  --s3:#199e70;
+  --s4:#c98500;
+  --s5:#d55181;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:1.0625rem;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+[hidden]{display:none!important}
+
+.wrap{width:100%;max-width:72rem;margin-inline:auto;padding-inline:clamp(1rem,4vw,2.5rem)}
+
+.topbar{border-bottom:1px solid var(--line);background:var(--ground)}
+.topbar .wrap{height:3.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.topbar a{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-soft);text-decoration:none}
+.topbar a:hover{color:var(--ink)}
+.topbar-right{display:flex;align-items:center;gap:0.75rem}
+.theme-toggle{
+  display:inline-grid;place-items:center;width:2rem;height:2rem;flex-shrink:0;padding:0;
+  border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink-soft);cursor:pointer;
+  transition:color .15s,background-color .15s;
+}
+.theme-toggle:hover{color:var(--ink);background:var(--surface-alt)}
+.theme-toggle svg{width:0.95rem;height:0.95rem}
+.theme-toggle[data-mode="light"] .sun,.theme-toggle[data-mode="dark"] .moon{display:none}
+
+header.hero{padding-block:clamp(2rem,6vw,3.5rem) 1.5rem}
+.eyebrow{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-faint);margin:0 0 0.75rem}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,5.5vw,3.25rem);line-height:1.05;letter-spacing:-0.02em;margin:0 0 1rem;font-variation-settings:"wdth" 90;max-width:22ch}
+.lede{font-size:clamp(1.0625rem,2vw,1.2rem);color:var(--ink-soft);max-width:62ch;margin:0}
+
+section{padding-block:1.5rem}
+h2{font-family:var(--font-display);font-weight:650;font-size:clamp(1.4rem,3vw,1.75rem);letter-spacing:-0.01em;margin:0 0 0.5rem;font-variation-settings:"wdth" 92}
+h3{font-size:1rem;font-weight:600;margin:0 0 0.15rem}
+.section-note{color:var(--ink-soft);max-width:66ch;margin:0 0 1.25rem}
+.section-note + .section-note{margin-top:-0.5rem}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(1rem,2.5vw,1.5rem);min-width:0}
+.card + .card{margin-top:1rem}
+.card .hint{font-size:0.875rem;color:var(--ink-faint);margin:0 0 0.75rem}
+
+/* Stat tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(14.5rem,1fr));gap:1rem}
+.tile .label{font-size:0.9375rem;color:var(--ink-soft);margin:0 0 0.35rem}
+.tile .value{font-size:clamp(2rem,5vw,2.6rem);font-weight:600;line-height:1.1;margin:0;font-variant-numeric:tabular-nums}
+.tile .value small{font-size:0.5em;font-weight:500;color:var(--ink-soft);margin-left:0.3rem}
+.tile .sub{font-size:0.9375rem;color:var(--ink-soft);margin:0.6rem 0 0}
+
+/* Bars */
+.bar-row{display:grid;grid-template-columns:minmax(7rem,12rem) 1fr;align-items:center;gap:0.75rem;margin-bottom:0.55rem}
+.bar-row .who{font-size:0.875rem;color:var(--ink-soft);line-height:1.3}
+.bar-track{position:relative;height:24px;display:flex;align-items:center}
+.bar{height:20px;border-radius:0 4px 4px 0;min-width:2px}
+.bar-value{margin-left:0.5rem;font-size:0.9375rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar-value small{font-weight:500;color:var(--ink-soft);margin-left:0.3rem}
+@media (max-width:40rem){.bar-row{grid-template-columns:minmax(0,1fr);gap:0.15rem;margin-bottom:0.8rem}}
+.caveat{font-size:0.9375rem;color:var(--ink-soft);border-left:3px solid var(--line);padding-left:0.9rem;margin:1.25rem 0 0;max-width:70ch}
+
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));gap:1rem;align-items:start}
+.two-col .card + .card{margin-top:0}
+
+/* Charts */
+.chart-wrap{position:relative}
+.chart-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.chart-wrap .axis text,.chart-wrap .annot{font-family:var(--font-body);font-size:12px;fill:var(--ink-faint)}
+.chart-legend{display:flex;flex-wrap:wrap;gap:0.4rem 1.25rem;font-size:0.8125rem;color:var(--ink-soft);margin:0 0 0.5rem}
+.chart-legend span{display:inline-flex;align-items:center;gap:0.45rem}
+.key-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.key-line{width:16px;height:2px;border-radius:2px;display:inline-block}
+.key-band{width:16px;height:10px;border-radius:2px;display:inline-block;opacity:0.25}
+.swatch{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+.tooltip{
+  position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:0.5rem 0.7rem;font-size:0.8125rem;line-height:1.45;box-shadow:0 6px 24px -8px rgba(0,0,0,0.25);
+  min-width:11rem;z-index:2;
+}
+.tooltip .th{color:var(--ink-soft);margin-bottom:0.2rem}
+.tooltip .row{display:flex;align-items:center;gap:0.45rem;color:var(--ink-soft)}
+.tooltip .row b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;margin-left:auto;padding-left:0.75rem}
+
+/* Explorer */
+.chips{display:flex;flex-wrap:wrap;gap:0.4rem;margin:0 0 1rem}
+.chip{
+  font:inherit;font-size:0.875rem;color:var(--ink-soft);background:var(--surface);
+  border:1px solid var(--line);border-radius:999px;padding:0.3rem 0.75rem;cursor:pointer;
+  transition:background-color .15s,color .15s,border-color .15s;
+}
+.chip:hover{color:var(--ink);background:var(--surface-alt)}
+.chip[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-wash)}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:0.5rem 1rem;margin:1rem 0 0;padding:0.75rem 0 0;border-top:1px solid var(--line-soft)}
+.facts div{min-width:0}
+.facts dt{font-size:0.8125rem;color:var(--ink-faint)}
+.facts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+
+details.table-view{margin-top:0.75rem}
+details.table-view summary{cursor:pointer;font-size:0.9375rem;color:var(--ink-soft)}
+details.table-view summary:hover{color:var(--ink)}
+.table-scroll{overflow-x:auto;margin-top:0.5rem;max-height:22rem;overflow-y:auto}
+table{border-collapse:collapse;font-size:0.875rem;width:100%;min-width:24rem}
+th,td{text-align:right;padding:0.35rem 0.6rem;border-bottom:1px solid var(--line-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--ink-soft);position:sticky;top:0;background:var(--surface)}
+
+ul.limits{margin:0;padding-left:1.2rem;color:var(--ink-soft);max-width:70ch}
+ul.limits li{margin-bottom:0.5rem}
+
+footer{padding-block:2rem 3rem;color:var(--ink-faint);font-size:0.875rem}
+footer p{margin:0 0 0.4rem;max-width:74ch}
+.loading{color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap">
+    <a href="/">&larr; Reece Milligan</a>
+    <div class="topbar-right">
+      <a href="https://github.com/reecemill/geomagnetic-storm-forecasting" target="_blank" rel="noopener">Code on GitHub</a>
+      <button class="theme-toggle" type="button" aria-label="Switch to dark mode">
+      <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1z"/></svg>
+      <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
+    </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Geomagnetic storm forecasting · results</p>
+    <h1>Can a model forecast geomagnetic storms better than NOAA?</h1>
+    <p class="lede">
+      Geomagnetic storms drag satellites down, disrupt GPS and radio, and can threaten power grids.
+      Every day at 22:00 UTC, NOAA publishes the probability of a storm on each of the next three days.
+      This page scores that forecast on 2022–2025, the current solar maximum, and tests four models
+      trained on 30 years of solar wind and geomagnetic data against it.
+    </p>
+  </header>
+
+  <section aria-labelledby="headline-h">
+    <h2 id="headline-h" hidden>Headline results</h2>
+    <div class="tiles" id="tiles"><p class="loading">Loading…</p></div>
+  </section>
+
+  <section aria-labelledby="years-h">
+    <h2 id="years-h">Storms follow the solar cycle</h2>
+    <p class="section-note">
+      A storm day has at least one three-hour period at Kp 5- or more (NOAA's G1 and up). About one
+      day in eight has one, and far more near the peak of the Sun's 11-year cycle.
+    </p>
+    <div class="card">
+      <div class="chart-wrap" id="years-chart"></div>
+      <details class="table-view"><summary>Show the numbers</summary><div class="table-scroll" id="years-table"></div></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="skill-h">
+    <h2 id="skill-h">Next-day forecasts on 2022–2025</h2>
+    <p class="section-note">
+      Brier skill is the improvement over knowing only the past year's storm rate: 0% means no better,
+      higher is better. The models' settings were chosen on 2017–2021, and they were retrained on
+      1996–2021 and scored once on these years, on the same days as NOAA's forecasts.
+    </p>
+    <div class="card">
+      <h3>Brier skill, forecasts for the next UT day</h3>
+      <p class="hint">1,449 test days, 17% of them with a storm</p>
+      <div id="skill-bars"></div>
+      <details class="table-view"><summary>All lead times</summary><div class="table-scroll" id="skill-table"></div></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="noaa-h">
+    <h2 id="noaa-h">Each model against NOAA</h2>
+    <p class="section-note">
+      The difference in Brier score from NOAA's forecast on the same days, with 95% paired-bootstrap
+      intervals: below zero is better than NOAA. The next day, every model beat NOAA, two by more than
+      chance. Two and three days ahead, none did. NOAA's forecasters can see coronal mass ejections
+      leave the Sun a day or more before they arrive; nothing in this data can.
+    </p>
+    <div class="card">
+      <div class="chart-legend" id="noaa-legend" aria-hidden="true"></div>
+      <div class="chart-wrap" id="noaa-chart"></div>
+      <p class="caveat" id="noaa-caveat"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="days-h">
+    <h2 id="days-h">Day by day</h2>
+    <p class="section-note">
+      The next-day storm probability from NOAA and from the model chosen in advance (gradient boosting
+      with NOAA's forecast as an input). Shaded days had a storm. Pick a year; 2024 includes the May
+      superstorm, the strongest in two decades.
+    </p>
+    <div class="card">
+      <div class="chips" id="year-chips" role="group" aria-label="Year"></div>
+      <div class="chart-legend" aria-hidden="true">
+        <span><i class="key-line" style="background:var(--s2)"></i>NOAA, as published</span>
+        <span><i class="key-line" style="background:var(--s1)"></i>Model chosen in advance</span>
+        <span><i class="key-band" style="background:var(--ink-faint)"></i>Storm day</span>
+      </div>
+      <div class="chart-wrap" id="days-chart"></div>
+      <dl class="facts" id="days-facts"></dl>
+    </div>
+  </section>
+
+  <section aria-labelledby="limits-h">
+    <h2 id="limits-h">What this doesn't show</h2>
+    <ul class="limits">
+      <li>The models learn and are tested on final, cleaned data: definitive Kp and quality-checked solar wind. NOAA forecasts in real time from preliminary Kp and live solar wind with gaps. That flatters the models, most of all the next day. A fair operational comparison needs archived real-time data.</li>
+      <li>NOAA forecasts a mid-latitude K index, not the planetary Kp scored here.</li>
+      <li>The recurrent network scored best on the test years but worst on 2017–2021, so its test result isn't taken as the best; the model chosen in advance is gradient boosting with NOAA's forecast as an input.</li>
+      <li>Four test years, one solar maximum.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>
+    Data: the Kp index from <a href="https://kp.gfz.de" target="_blank" rel="noopener">GFZ Potsdam</a>; hourly solar wind from NASA's
+    <a href="https://omniweb.gsfc.nasa.gov" target="_blank" rel="noopener">OMNI</a> dataset; NOAA's forecasts from the Space Weather
+    Prediction Center's daily Report of Solar-Geophysical Activity.
+  </p>
+  <p>
+    Method, code and all three notebooks: <a href="https://github.com/reecemill/geomagnetic-storm-forecasting" target="_blank" rel="noopener">github.com/reecemill/geomagnetic-storm-forecasting</a>.
+  </p>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (sel) => document.querySelector(sel);
+  const el = (tag, props = {}, ...kids) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") node.className = v;
+      else if (k === "text") node.textContent = v;
+      else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+      else node.setAttribute(k, v);
+    }
+    for (const kid of kids) if (kid != null) node.append(kid);
+    return node;
+  };
+  const SVG = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs = {}) => {
+    const node = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  };
+  const pct = (v, d = 1) => (v < 0 ? "−" : "") + Math.abs(v * 100).toFixed(d) + "%";
+  const signed = (v) => (v < 0 ? "−" : "+") + Math.abs(v).toFixed(4);
+
+  // Colour follows the forecast across the page: NOAA is always orange.
+  const COLORS = {
+    "NOAA, as published": "var(--s2)",
+    "gradient boosting + NOAA": "var(--s1)",
+    "logistic regression": "var(--s3)",
+    "gradient boosting": "var(--s4)",
+    "recurrent network": "var(--s5)",
+  };
+  const MODELS = ["logistic regression", "gradient boosting", "gradient boosting + NOAA", "recurrent network"];
+  const LABELS = {
+    "gradient boosting + NOAA": "Gradient boosting + NOAA's forecast",
+    "logistic regression": "Logistic regression",
+    "gradient boosting": "Gradient boosting",
+    "recurrent network": "Recurrent network",
+  };
+
+  let data, year = "2024";
+  const redraws = [];
+
+  fetch("data.json")
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then((d) => { data = d; init(); })
+    .catch(() => $("#tiles").replaceChildren(el("p", { class: "loading", text: "Couldn't load the data. Try reloading the page." })));
+
+  const model = (forecast, lead = 1) => data.models.find((r) => r.forecast === forecast && r["lead days"] === lead);
+  const baseline = (forecast, lead = 1) => data.baselines.find((r) => r.forecast === forecast && r["lead days"] === lead);
+
+  function init() {
+    renderTiles();
+    renderSkillBars();
+    renderTables();
+    renderYearChips();
+    $("#noaa-legend").replaceChildren(...MODELS.map((f) => el("span", {}, el("i", { class: "key-dot", style: `background:${COLORS[f]}` }), LABELS[f])));
+    $("#noaa-caveat").textContent = "The recurrent network scored best here but worst on 2017–2021, the years used to choose, so it isn't taken as the best. The model chosen in advance is gradient boosting with NOAA's forecast as an input.";
+    redraws.push(drawYears, drawVsNoaa, drawDays);
+    redraws.forEach((f) => f());
+    let timer;
+    new ResizeObserver(() => { clearTimeout(timer); timer = setTimeout(() => redraws.forEach((f) => f()), 120); }).observe($("main"));
+  }
+
+  function renderTiles() {
+    const noaa1 = model("NOAA, as published"), chosen = model(data.winner), noaa2 = model("NOAA, as published", 2);
+    const beats2 = MODELS.filter((f) => model(f, 2).high < 0).length + MODELS.filter((f) => model(f, 3).high < 0).length;
+    const stormShare = data.days.filter((d) => d.storm).length / data.days.length;
+    const tile = (label, value, sub) => el("div", { class: "card tile" },
+      el("p", { class: "label", text: label }), el("p", { class: "value", text: value }), el("p", { class: "sub", text: sub }));
+    $("#tiles").replaceChildren(
+      tile("NOAA's next-day storm forecast", pct(noaa1["Brier skill"]), "Brier skill over knowing the past year's storm rate, 2022–2025."),
+      tile("The model chosen in advance", pct(chosen["Brier skill"]),
+        `Gradient boosting with NOAA's forecast as an input: better than NOAA by more than chance, interval ${signed(chosen.low)} to ${signed(chosen.high)}.`),
+      tile("Two and three days ahead", beats2 ? `${beats2} wins` : "No model", `beat NOAA by more than chance. NOAA's skill there: ${pct(noaa2["Brier skill"])} two days ahead.`),
+      tile("Days with a storm, 2022–2025", pct(stormShare, 0), "The current solar maximum, including the May 2024 superstorm."));
+  }
+
+  function renderSkillBars() {
+    const items = [
+      { label: "NOAA, as published", value: model("NOAA, as published")["Brier skill"], color: COLORS["NOAA, as published"] },
+      { label: "Persistence (today's activity)", value: baseline("Persistence")["skill vs climatology"], color: "var(--ink-faint)" },
+      { label: "27-day echo alone", value: baseline("27-day echo")["skill vs climatology"], color: "var(--ink-faint)" },
+      ...MODELS.map((f) => ({ label: LABELS[f], value: model(f)["Brier skill"], color: COLORS[f] })),
+    ];
+    const max = Math.max(...items.map((i) => i.value));
+    $("#skill-bars").replaceChildren(...items.map((it) => el("div", { class: "bar-row" },
+      el("span", { class: "who", text: it.label }),
+      el("div", { class: "bar-track" },
+        el("div", { class: "bar", style: `width:calc((100% - 5rem) * ${Math.max(0, it.value / max).toFixed(4)});background:${it.color}` }),
+        el("span", { class: "bar-value", text: pct(it.value) })))));
+  }
+
+  function table(sel, head, rows) {
+    $(sel).replaceChildren(el("table", {},
+      el("thead", {}, el("tr", {}, ...head.map((h) => el("th", { scope: "col", text: h })))),
+      el("tbody", {}, ...rows.map((r) => el("tr", {}, ...r.map((c) => el("td", { text: c })))))));
+  }
+
+  function renderTables() {
+    table("#years-table", ["Year", "Storm days", "Mean sunspot number"], data.stormYears.map((r) => [r.year, r.storm_days, Math.round(r.sunspots)]));
+    const rows = [];
+    for (const lead of [1, 2, 3]) {
+      for (const f of ["Climatology", "Persistence", "27-day echo"]) rows.push([lead, f, pct(baseline(f, lead)["skill vs climatology"]), "–"]);
+      for (const f of ["NOAA, as published", ...MODELS]) {
+        const r = model(f, lead);
+        rows.push([lead, LABELS[f] || f, pct(r["Brier skill"]), r.low == null ? "–" : `${signed(r["Brier minus NOAA"])} (${signed(r.low)} to ${signed(r.high)})`]);
+      }
+    }
+    table("#skill-table", ["Days ahead", "Forecast", "Brier skill", "Brier minus NOAA (95% interval)"], rows);
+  }
+
+  // A tooltip that follows a point, shared by the charts below.
+  function placeTip(tip, wrap, px, py, W) {
+    tip.hidden = false;
+    const scale = wrap.clientWidth / W, tw = tip.offsetWidth;
+    let left = px * scale + 14; if (left + tw > wrap.clientWidth) left = px * scale - tw - 14;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = Math.max(0, py * scale - tip.offsetHeight - 10) + "px";
+  }
+
+  function axes(svg, m, iw, ih, W, H, yTicks, y, yFmt, yLabel) {
+    const g = svgEl("g", { class: "axis" });
+    for (const v of yTicks) {
+      g.append(svgEl("line", { x1: m.left, x2: m.left + iw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--line)" : "var(--line-soft)", "stroke-width": 1 }));
+      const t = svgEl("text", { x: m.left - 8, y: y(v) + 4, "text-anchor": "end" });
+      t.textContent = yFmt(v);
+      g.append(t);
+    }
+    const yl = svgEl("text", { transform: `translate(11 ${m.top + ih / 2}) rotate(-90)`, "text-anchor": "middle" });
+    yl.textContent = yLabel;
+    g.append(yl);
+    svg.append(g);
+    return g;
+  }
+
+  function drawYears() {
+    const wrap = $("#years-chart"), rows = data.stormYears;
+    const W = Math.max(300, wrap.clientWidth || 600), H = W < 520 ? 240 : 280;
+    const m = { top: 12, right: 10, bottom: 34, left: 56 }, iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+    const max = Math.max(...rows.map((r) => r.storm_days)) * 1.08;
+    const y = (v) => m.top + ih - (v / max) * ih;
+    const band = iw / rows.length, bar = Math.max(2, band - 3);
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": "Storm days per year from 1995 to 2025, peaking at 158 in 2003 and 97 in 2025 and falling to 4 in 2009. Numbers in the table below." });
+    const g = axes(svg, m, iw, ih, W, H, [0, 40, 80, 120, 160].filter((v) => v <= max), y, String, "Storm days");
+    rows.forEach((r, i) => {
+      if (r.year % 5 === 0) {
+        const t = svgEl("text", { x: m.left + i * band + band / 2, y: m.top + ih + 18, "text-anchor": "middle" });
+        t.textContent = r.year;
+        g.append(t);
+      }
+    });
+    const tip = el("div", { class: "tooltip", hidden: "" });
+    rows.forEach((r, i) => {
+      const x0 = m.left + i * band + (band - bar) / 2;
+      const rect = svgEl("rect", { x: x0, y: y(r.storm_days), width: bar, height: y(0) - y(r.storm_days), rx: 2, fill: "var(--s1)" });
+      const hit = svgEl("rect", { x: m.left + i * band, y: m.top, width: band, height: ih, fill: "transparent", tabindex: "0",
+        "aria-label": `${r.year}: ${r.storm_days} storm days` });
+      const show = () => {
+        tip.replaceChildren(el("div", { class: "th", text: String(r.year) }),
+          el("div", { class: "row" }, "Storm days", el("b", { text: String(r.storm_days) })),
+          el("div", { class: "row" }, "Mean sunspot number", el("b", { text: String(Math.round(r.sunspots)) })));
+        rect.setAttribute("fill", "var(--accent)");
+        placeTip(tip, wrap, x0 + bar / 2, y(r.storm_days), W);
+      };
+      const hide = () => { tip.hidden = true; rect.setAttribute("fill", "var(--s1)"); };
+      hit.addEventListener("pointerenter", show); hit.addEventListener("pointerleave", hide);
+      hit.addEventListener("focus", show); hit.addEventListener("blur", hide);
+      svg.append(rect, hit);
+    });
+    wrap.replaceChildren(svg, tip);
+  }
+
+  function drawVsNoaa() {
+    const wrap = $("#noaa-chart");
+    const W = Math.max(300, wrap.clientWidth || 600), H = W < 520 ? 260 : 300;
+    const m = { top: 14, right: 10, bottom: 34, left: 64 }, iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+    const points = MODELS.flatMap((f) => [1, 2, 3].map((lead) => ({ f, lead, ...model(f, lead) })));
+    const lo = Math.min(...points.map((p) => p.low)) * 1.1, hi = Math.max(...points.map((p) => p.high)) * 1.1;
+    const y = (v) => m.top + ih - ((v - lo) / (hi - lo)) * ih;
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": "Brier score minus NOAA's for each model and lead time. Next day all four are below zero, two with intervals entirely below. Two and three days ahead none are entirely below zero. Numbers in the table above." });
+    const ticks = [-0.02, -0.015, -0.01, -0.005, 0, 0.005, 0.01, 0.015].filter((v) => v >= lo && v <= hi);
+    const g = axes(svg, m, iw, ih, W, H, ticks, y, (v) => (v < 0 ? "−" : "") + Math.abs(v).toFixed(3), "Brier score minus NOAA's");
+    const group = iw / 3;
+    [1, 2, 3].forEach((lead, i) => {
+      const t = svgEl("text", { x: m.left + group * i + group / 2, y: m.top + ih + 20, "text-anchor": "middle" });
+      t.textContent = lead === 1 ? "Next day" : `${lead} days ahead`;
+      g.append(t);
+    });
+    const note = (text, dy) => { const t = svgEl("text", { class: "annot", x: m.left + iw - 4, y: y(0) + dy, "text-anchor": "end" }); t.textContent = text; svg.append(t); };
+    if (W >= 560) { note("worse than NOAA", -6); note("better than NOAA", 14); }
+    const tip = el("div", { class: "tooltip", hidden: "" });
+    const spread = Math.min(18, group / 6);
+    points.forEach((p) => {
+      const k = MODELS.indexOf(p.f), cx = m.left + group * (p.lead - 1) + group / 2 + (k - 1.5) * spread;
+      const color = COLORS[p.f];
+      const line = svgEl("line", { x1: cx, x2: cx, y1: y(p.low), y2: y(p.high), stroke: color, "stroke-width": 2 });
+      const dot = svgEl("circle", { cx, cy: y(p["Brier minus NOAA"]), r: 5, fill: color, stroke: "var(--surface)", "stroke-width": 2 });
+      const hit = svgEl("rect", { x: cx - spread / 2, y: m.top, width: spread, height: ih, fill: "transparent", tabindex: "0",
+        "aria-label": `${LABELS[p.f]}, ${p.lead} days ahead: ${signed(p["Brier minus NOAA"])}` });
+      const show = () => {
+        tip.replaceChildren(el("div", { class: "th", text: `${LABELS[p.f]}, ${p.lead === 1 ? "next day" : p.lead + " days ahead"}` }),
+          el("div", { class: "row" }, "Brier minus NOAA", el("b", { text: signed(p["Brier minus NOAA"]) })),
+          el("div", { class: "row" }, "95% interval", el("b", { text: `${signed(p.low)} to ${signed(p.high)}` })),
+          el("div", { class: "row" }, "Brier skill", el("b", { text: pct(p["Brier skill"]) })));
+        dot.setAttribute("r", 7);
+        placeTip(tip, wrap, cx, y(p.low), W);
+      };
+      const hide = () => { tip.hidden = true; dot.setAttribute("r", 5); };
+      hit.addEventListener("pointerenter", show); hit.addEventListener("pointerleave", hide);
+      hit.addEventListener("focus", show); hit.addEventListener("blur", hide);
+      svg.append(line, dot, hit);
+    });
+    wrap.replaceChildren(svg, tip);
+  }
+
+  function renderYearChips() {
+    // Forecasts issued on Dec 31 are for Jan 1, so offer only years with a real share of days.
+    const counts = {};
+    data.days.forEach((d) => { const yv = d.date.slice(0, 4); counts[yv] = (counts[yv] || 0) + 1; });
+    const years = Object.keys(counts).filter((yv) => counts[yv] >= 30).sort();
+    $("#year-chips").replaceChildren(...years.map((yv) => el("button", { class: "chip", type: "button", "aria-pressed": String(yv === year), text: yv,
+      onclick: () => { year = yv; renderYearChips(); drawDays(); } })));
+  }
+
+  function drawDays() {
+    const wrap = $("#days-chart"), days = data.days.filter((d) => d.date.startsWith(year));
+    const W = Math.max(300, wrap.clientWidth || 600), H = W < 520 ? 250 : 300;
+    const m = { top: 12, right: 12, bottom: 34, left: 56 }, iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+    const x = (i) => m.left + (i + 0.5) * (iw / days.length);
+    const y = (v) => m.top + ih - v * ih;
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": `Next-day storm probability from NOAA and the model for each day of ${year}, with storm days shaded.` });
+    const g = axes(svg, m, iw, ih, W, H, [0, 0.25, 0.5, 0.75, 1], y, (v) => Math.round(v * 100) + "%", "Chance of a storm");
+    const step = iw / days.length;
+    days.forEach((d, i) => {
+      if (d.storm) svg.insertBefore(svgEl("rect", { x: x(i) - step / 2, y: m.top, width: Math.max(1, step), height: ih, fill: "var(--ink-faint)", opacity: 0.18 }), g);
+      const month = Number(d.date.slice(5, 7));
+      if (d.date.endsWith("-01") && (W >= 560 || month % 3 === 1)) {
+        const t = svgEl("text", { x: x(i), y: m.top + ih + 18, "text-anchor": "middle" });
+        t.textContent = new Date(d.date + "T00:00:00Z").toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+        g.append(t);
+      }
+    });
+    const path = (key) => days.map((d, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join("");
+    svg.append(svgEl("path", { d: path("noaa"), fill: "none", stroke: COLORS["NOAA, as published"], "stroke-width": 1.5, "stroke-linejoin": "round" }));
+    svg.append(svgEl("path", { d: path("model"), fill: "none", stroke: COLORS[data.winner], "stroke-width": 1.5, "stroke-linejoin": "round" }));
+
+    const cross = svgEl("line", { y1: m.top, y2: m.top + ih, stroke: "var(--ink-faint)", "stroke-width": 1, visibility: "hidden" });
+    const dots = ["noaa", "model"].map((k) => svgEl("circle", { r: 4.5, fill: k === "noaa" ? COLORS["NOAA, as published"] : COLORS[data.winner], stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" }));
+    const hit = svgEl("rect", { x: m.left, y: m.top, width: iw, height: ih, fill: "transparent", tabindex: "0",
+      "aria-label": "Chart hover area. Use the left and right arrow keys to step through the days." });
+    svg.append(cross, ...dots, hit);
+    const tip = el("div", { class: "tooltip", hidden: "" });
+    let idx = 0;
+    const show = (i) => {
+      const d = days[i], px = x(i);
+      cross.setAttribute("x1", px); cross.setAttribute("x2", px); cross.setAttribute("visibility", "visible");
+      [d.noaa, d.model].forEach((v, k) => { dots[k].setAttribute("cx", px); dots[k].setAttribute("cy", y(v)); dots[k].setAttribute("visibility", "visible"); });
+      const when = new Date(d.date + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+      tip.replaceChildren(el("div", { class: "th", text: `${when}: ${d.storm ? "storm" : "no storm"} (peak Kp ${d.max_kp.toFixed(1)})` }),
+        el("div", { class: "row" }, el("i", { class: "key-line", style: `background:${COLORS["NOAA, as published"]}` }), "NOAA, the day before", el("b", { text: pct(d.noaa, 0) })),
+        el("div", { class: "row" }, el("i", { class: "key-line", style: `background:${COLORS[data.winner]}` }), "Model, the day before", el("b", { text: pct(d.model, 0) })));
+      placeTip(tip, wrap, px, m.top + 40, W);
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dots.forEach((d) => d.setAttribute("visibility", "hidden")); };
+    const nearest = (clientX) => {
+      const r = svg.getBoundingClientRect();
+      return Math.max(0, Math.min(days.length - 1, Math.round((((clientX - r.left) / r.width) * W - m.left) / step - 0.5)));
+    };
+    hit.addEventListener("pointermove", (ev) => { idx = nearest(ev.clientX); show(idx); });
+    hit.addEventListener("pointerleave", hide);
+    hit.addEventListener("focus", () => show(idx));
+    hit.addEventListener("blur", hide);
+    hit.addEventListener("keydown", (ev) => {
+      if (ev.key === "ArrowLeft") { idx = Math.max(0, idx - 1); show(idx); ev.preventDefault(); }
+      if (ev.key === "ArrowRight") { idx = Math.min(days.length - 1, idx + 1); show(idx); ev.preventDefault(); }
+      if (ev.key === "Escape") hide();
+    });
+    wrap.replaceChildren(svg, tip);
+
+    const storms = days.filter((d) => d.storm), calm = days.filter((d) => !d.storm);
+    const mean = (rows, key) => rows.reduce((a, d) => a + d[key], 0) / Math.max(1, rows.length);
+    $("#days-facts").replaceChildren(...[
+      ["Storm days", `${storms.length} of ${days.length}`],
+      ["Average forecast before a storm day", `NOAA ${pct(mean(storms, "noaa"), 0)}, model ${pct(mean(storms, "model"), 0)}`],
+      ["Average forecast before a quiet day", `NOAA ${pct(mean(calm, "noaa"), 0)}, model ${pct(mean(calm, "model"), 0)}`],
+    ].map(([k, v]) => el("div", {}, el("dt", { text: k }), el("dd", { text: v }))));
+  }
+})();
+</script>
+<script>
+(() => {
+  const root = document.documentElement, toggle = document.querySelector(".theme-toggle");
+  const system = window.matchMedia("(prefers-color-scheme: dark)");
+  const mode = () => root.getAttribute("data-theme") || (system.matches ? "dark" : "light");
+  const sync = () => {
+    toggle.setAttribute("data-mode", mode());
+    toggle.setAttribute("aria-label", mode() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  };
+  toggle.addEventListener("click", () => {
+    const next = mode() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    sync();
+  });
+  system.addEventListener("change", sync);
+  sync();
+})();
+</script>
+</body>
+</html>
