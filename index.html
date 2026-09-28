@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Reece Milligan</title>
 <meta name="description" content="Software engineer moving into machine learning and applied data science. Projects, experience, and resume.">
+<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -67,6 +68,9 @@
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
+:root{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark}}
 @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
 body{
   margin:0;
@@ -116,6 +120,45 @@ a{color:inherit}
   min-width:0;
 }
 .nav-links::-webkit-scrollbar{display:none}
+.nav-top{
+  display:inline-flex;
+  align-items:center;
+  gap:0.35rem;
+  font-family:var(--font-mono);
+  font-size:0.8125rem;
+  color:var(--ink-soft);
+  text-decoration:none;
+  padding:0.45rem 0.7rem 0.45rem 0.55rem;
+  margin-left:-0.55rem;
+  border-radius:999px;
+  white-space:nowrap;
+  flex-shrink:0;
+  transition:color .15s, background-color .15s;
+}
+.nav-top svg{width:0.95em;height:0.95em}
+.nav-top:hover{color:var(--ink);background:var(--surface-alt)}
+@media (max-width:560px){
+  .nav-top span{display:none}
+  .nav-top{padding-inline:0.55rem}
+}
+.theme-toggle{
+  display:inline-grid;
+  place-items:center;
+  width:2.25rem;
+  height:2.25rem;
+  flex-shrink:0;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:transparent;
+  color:var(--ink-soft);
+  cursor:pointer;
+  transition:color .15s, background-color .15s, border-color .15s;
+}
+.theme-toggle:hover{color:var(--ink);background:var(--surface-alt)}
+.theme-toggle svg{width:1rem;height:1rem}
+.theme-toggle[data-mode="light"] .sun,
+.theme-toggle[data-mode="dark"] .moon{display:none}
 .nav-links a{
   display:block;
   font-family:var(--font-mono);
@@ -445,12 +488,20 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
 
 <nav class="nav" aria-label="Sections">
   <div class="wrap">
+    <a class="nav-top" href="#top" aria-label="Back to top">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>
+      <span>Top</span>
+    </a>
     <ul class="nav-links">
       <li><a href="#projects">Projects</a></li>
       <li><a href="#experience">Experience</a></li>
       <li><a href="#skills">Skills</a></li>
       <li><a href="#education">Education</a></li>
     </ul>
+    <button class="theme-toggle" type="button" aria-label="Switch to dark mode">
+      <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1z"/></svg>
+      <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
+    </button>
     <a class="btn" href="Reece_Milligan_Resume.pdf" download>
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 2v9M4 7.5 8 11.5l4-4M3 14h10"/></svg>
       <span>Resume<span class="long"> PDF</span></span>
@@ -474,8 +525,7 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
       </div>
       <ul class="contact">
         <li><a href="mailto:reecemilligan@gmail.com">reecemilligan@gmail.com</a></li>
-        <li><a href="https://github.com/reecemill">GitHub</a></li>
-        <li><a href="https://www.linkedin.com/">LinkedIn</a></li>
+        <li><a href="https://github.com/reecemill" target="_blank" rel="noopener">GitHub</a></li>
       </ul>
     </div>
   </div>
@@ -530,7 +580,7 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 13.5h12M3.5 11l3-4 2.5 2.5L13 4"/></svg>
               <span>Explore the results</span>
             </a>
-            <a class="btn btn--ghost" href="https://github.com/reecemill/satellite-collision-risk">
+            <a class="btn btn--ghost" href="https://github.com/reecemill/satellite-collision-risk" target="_blank" rel="noopener">
               <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
               <span>View code on GitHub</span>
             </a>
@@ -577,11 +627,11 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
             <li>Sentence embeddings</li><li>Item response theory</li><li>Cross-validation</li>
           </ul>
           <div class="project-links">
-            <a class="btn" href="https://rmill-quizbank-ai.hf.space">
+            <a class="btn" href="https://rmill-quizbank-ai.hf.space" target="_blank" rel="noopener">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 7 9M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg>
               <span>Try the live demo</span>
             </a>
-            <a class="btn btn--ghost" href="https://github.com/reecemill/quizbank">
+            <a class="btn btn--ghost" href="https://github.com/reecemill/quizbank" target="_blank" rel="noopener">
               <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
               <span>View code on GitHub</span>
             </a>
@@ -601,28 +651,53 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
         <div class="project-main">
           <div class="project-top">
             <h3>Orbit Determination &amp; Trajectory Prediction</h3>
-            <span class="status status--planned">Planned</span>
+            <span class="status status--done">Complete</span>
           </div>
           <p class="lede">
-            Modelling how orbit predictions go wrong, and spotting manoeuvres that
-            physics alone doesn't explain.
+            Measuring how wrong public satellite orbits are, learning and removing the
+            error, and fitting an orbit myself with detailed physics.
           </p>
           <p>
-            The public catalogue tracks more than 50,000 objects in orbit, but its element
-            sets lose accuracy the further forward they're propagated. This project
-            propagates orbits, measures how prediction error grows over time, and learns
-            what drives it.
+            Almost everyone outside a satellite's operator tracks it with a TLE, run through
+            the simplified SGP4 model. Against ESA's centimetre-accurate orbits for the
+            Sentinel-1 satellites, a fresh TLE is already off by about half a kilometre, and
+            most of that error is a half-day wave from Earth's oval equator, which SGP4 leaves
+            out. A gradient-boosting correction, tested on months it never saw, removes about
+            half of it, and still removes a quarter on a sister satellite it was never trained on.
           </p>
+          <p>
+            I also wrote a numerical propagator (gravity field to degree 40, Sun and Moon) and a
+            batch least-squares fit, and fitted orbits to simulated radar tracking. Over eight
+            test dates, the result is 23 m off in the first six hours after tracking ends, against
+            549 m for the newest TLE.
+          </p>
+          <dl class="stats">
+            <div class="stat"><dt>TLE error removed</dt><dd>51%</dd></div>
+            <div class="stat"><dt>Sister satellite</dt><dd>27%</dd></div>
+            <div class="stat"><dt>My orbit, first 6 h</dt><dd>23 m</dd></div>
+            <div class="stat"><dt>Newest TLE</dt><dd>549 m</dd></div>
+          </dl>
           <ul class="tags">
-            <li>Python</li><li>SGP4</li><li>Orbital mechanics</li>
-            <li>Anomaly detection</li><li>Uncertainty</li>
+            <li>Python</li><li>SGP4</li><li>Orbital mechanics</li><li>Numerical integration</li>
+            <li>Batch least squares</li><li>Gradient boosting</li><li>scikit-learn</li>
           </ul>
+          <div class="project-links">
+            <a class="btn" href="orbit/">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 13.5h12M3.5 11l3-4 2.5 2.5L13 4"/></svg>
+              <span>Explore the results</span>
+            </a>
+            <a class="btn btn--ghost" href="https://github.com/reecemill/orbit-determination" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              <span>View code on GitHub</span>
+            </a>
+          </div>
         </div>
         <aside class="note" aria-label="Why it's hard">
           <h4>Why it's hard</h4>
           <ul>
-            <li>Error growth depends on orbit regime, solar activity, and the object itself.</li>
-            <li>Physics gives the structure; the model has to learn what the physics misses.</li>
+            <li>A correction is only worth anything on data it never saw, so every month is tested on models trained only on earlier months.</li>
+            <li>Satellites make small, unannounced burns every week or two, which no prediction foresees.</li>
+            <li>One test date made the drag term look harmful; across eight dates it's clearly better, so every result is checked across months or dates.</li>
           </ul>
         </aside>
       </article>
@@ -736,6 +811,24 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
     }, {rootMargin:'-45% 0px -50% 0px'});
     Object.keys(byId).forEach(function(id){ var s=document.getElementById(id); if(s) io.observe(s); });
   }
+
+  /* ---- light / dark toggle: starts from the system setting, remembers a choice ---- */
+  var root = document.documentElement, toggle = document.querySelector('.theme-toggle');
+  var system = window.matchMedia('(prefers-color-scheme: dark)');
+  function mode(){ return root.getAttribute('data-theme') || (system.matches ? 'dark' : 'light'); }
+  function sync(){
+    var m = mode();
+    toggle.setAttribute('data-mode', m);
+    toggle.setAttribute('aria-label', m === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  toggle.addEventListener('click', function(){
+    var next = mode() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    sync();
+  });
+  if (system.addEventListener) system.addEventListener('change', sync);
+  sync();
 
 })();
 </script>

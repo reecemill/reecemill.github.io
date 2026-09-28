@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Collision Risk Explorer</title>
 <meta name="description" content="Explore how a simple rule and a gradient-boosting model forecast satellite collision risk two days out, event by event, on real ESA data.">
+<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -92,6 +93,15 @@ a{color:inherit}
 .topbar .wrap{height:3.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
 .topbar a{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-soft);text-decoration:none}
 .topbar a:hover{color:var(--ink)}
+.topbar-right{display:flex;align-items:center;gap:0.75rem}
+.theme-toggle{
+  display:inline-grid;place-items:center;width:2rem;height:2rem;flex-shrink:0;padding:0;
+  border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink-soft);cursor:pointer;
+  transition:color .15s,background-color .15s;
+}
+.theme-toggle:hover{color:var(--ink);background:var(--surface-alt)}
+.theme-toggle svg{width:0.95rem;height:0.95rem}
+.theme-toggle[data-mode="light"] .sun,.theme-toggle[data-mode="dark"] .moon{display:none}
 
 header.hero{padding-block:clamp(2rem,6vw,3.5rem) 1.5rem}
 .eyebrow{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-faint);margin:0 0 0.75rem}
@@ -224,7 +234,13 @@ footer p{margin:0 0 0.4rem;max-width:70ch}
 <div class="topbar">
   <div class="wrap">
     <a href="/">&larr; Reece Milligan</a>
-    <a href="https://github.com/reecemill/satellite-collision-risk">Code on GitHub</a>
+    <div class="topbar-right">
+      <a href="https://github.com/reecemill/satellite-collision-risk" target="_blank" rel="noopener">Code on GitHub</a>
+      <button class="theme-toggle" type="button" aria-label="Switch to dark mode">
+      <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1z"/></svg>
+      <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
+    </button>
+    </div>
   </div>
 </div>
 
@@ -292,12 +308,12 @@ footer p{margin:0 0 0.4rem;max-width:70ch}
 
 <footer class="wrap">
   <p>
-    Data: <a href="https://kelvins.esa.int/collision-avoidance-challenge/">ESA Kelvins Collision Avoidance Challenge</a>,
+    Data: <a href="https://kelvins.esa.int/collision-avoidance-challenge/" target="_blank" rel="noopener">ESA Kelvins Collision Avoidance Challenge</a>,
     real anonymized conjunction data messages from ESA missions (2015–2019). Risk is shown as log<sub>10</sub>
     of the collision probability, so −6 is about 1 in a million and −30 means effectively zero.
   </p>
   <p>
-    Method, code, and the full evaluation: <a href="https://github.com/reecemill/satellite-collision-risk">github.com/reecemill/satellite-collision-risk</a>.
+    Method, code, and the full evaluation: <a href="https://github.com/reecemill/satellite-collision-risk" target="_blank" rel="noopener">github.com/reecemill/satellite-collision-risk</a>.
   </p>
 </footer>
 
@@ -686,6 +702,25 @@ footer p{margin:0 0 0.4rem;max-width:70ch}
 
     wrap.replaceChildren(svg, tip);
   }
+})();
+</script>
+<script>
+(() => {
+  const root = document.documentElement, toggle = document.querySelector(".theme-toggle");
+  const system = window.matchMedia("(prefers-color-scheme: dark)");
+  const mode = () => root.getAttribute("data-theme") || (system.matches ? "dark" : "light");
+  const sync = () => {
+    toggle.setAttribute("data-mode", mode());
+    toggle.setAttribute("aria-label", mode() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  };
+  toggle.addEventListener("click", () => {
+    const next = mode() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    sync();
+  });
+  system.addEventListener("change", sync);
+  sync();
 })();
 </script>
 </body>

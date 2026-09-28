@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orbit Prediction Results</title>
+<meta name="description" content="How wrong public satellite orbits (TLEs) are, where the error comes from, how much of it can be learned and removed, and how an orbit fitted with detailed physics compares.">
+<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --ground:#F2F3F1;
+  --surface:#FFFFFF;
+  --surface-alt:#E8EAE6;
+  --line:#D5D8D2;
+  --line-soft:#E3E5E0;
+  --ink:#121417;
+  --ink-soft:#4B5058;
+  --ink-faint:#737A83;
+  --accent:#2440E6;
+  --accent-wash:rgba(36,64,230,0.08);
+  --s1:#2a78d6;
+  --s2:#eb6834;
+  --s3:#1baf7a;
+  --s4:#eda100;
+  --font-display:"Bricolage Grotesque","Arial Narrow",Helvetica,sans-serif;
+  --font-body:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#101216;
+    --surface:#181B21;
+    --surface-alt:#1E222A;
+    --line:#2D323C;
+    --line-soft:#23272F;
+    --ink:#ECEEF1;
+    --ink-soft:#AAB0BA;
+    --ink-faint:#7F8692;
+    --accent:#7C8CFF;
+    --accent-wash:rgba(124,140,255,0.10);
+    --s1:#3987e5;
+    --s2:#d95926;
+    --s3:#199e70;
+    --s4:#c98500;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#101216;
+  --surface:#181B21;
+  --surface-alt:#1E222A;
+  --line:#2D323C;
+  --line-soft:#23272F;
+  --ink:#ECEEF1;
+  --ink-soft:#AAB0BA;
+  --ink-faint:#7F8692;
+  --accent:#7C8CFF;
+  --accent-wash:rgba(124,140,255,0.10);
+  --s1:#3987e5;
+  --s2:#d95926;
+  --s3:#199e70;
+  --s4:#c98500;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:1.0625rem;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+[hidden]{display:none!important}
+
+.wrap{width:100%;max-width:72rem;margin-inline:auto;padding-inline:clamp(1rem,4vw,2.5rem)}
+
+.topbar{border-bottom:1px solid var(--line);background:var(--ground)}
+.topbar .wrap{height:3.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.topbar a{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-soft);text-decoration:none}
+.topbar a:hover{color:var(--ink)}
+.topbar-right{display:flex;align-items:center;gap:0.75rem}
+.theme-toggle{
+  display:inline-grid;place-items:center;width:2rem;height:2rem;flex-shrink:0;padding:0;
+  border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink-soft);cursor:pointer;
+  transition:color .15s,background-color .15s;
+}
+.theme-toggle:hover{color:var(--ink);background:var(--surface-alt)}
+.theme-toggle svg{width:0.95rem;height:0.95rem}
+.theme-toggle[data-mode="light"] .sun,.theme-toggle[data-mode="dark"] .moon{display:none}
+
+header.hero{padding-block:clamp(2rem,6vw,3.5rem) 1.5rem}
+.eyebrow{font-family:var(--font-mono);font-size:0.8125rem;color:var(--ink-faint);margin:0 0 0.75rem}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,5.5vw,3.25rem);line-height:1.05;letter-spacing:-0.02em;margin:0 0 1rem;font-variation-settings:"wdth" 90;max-width:22ch}
+.lede{font-size:clamp(1.0625rem,2vw,1.2rem);color:var(--ink-soft);max-width:62ch;margin:0}
+
+section{padding-block:1.5rem}
+h2{font-family:var(--font-display);font-weight:650;font-size:clamp(1.4rem,3vw,1.75rem);letter-spacing:-0.01em;margin:0 0 0.5rem;font-variation-settings:"wdth" 92}
+h3{font-size:1rem;font-weight:600;margin:0 0 0.15rem}
+.section-note{color:var(--ink-soft);max-width:66ch;margin:0 0 1.25rem}
+.section-note + .section-note{margin-top:-0.5rem}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(1rem,2.5vw,1.5rem);min-width:0}
+.card + .card{margin-top:1rem}
+.card .hint{font-size:0.875rem;color:var(--ink-faint);margin:0 0 0.75rem}
+
+/* Stat tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(14.5rem,1fr));gap:1rem}
+.tile .label{font-size:0.9375rem;color:var(--ink-soft);margin:0 0 0.35rem}
+.tile .value{font-size:clamp(2rem,5vw,2.6rem);font-weight:600;line-height:1.1;margin:0;font-variant-numeric:tabular-nums}
+.tile .value small{font-size:0.5em;font-weight:500;color:var(--ink-soft);margin-left:0.3rem}
+.tile .sub{font-size:0.9375rem;color:var(--ink-soft);margin:0.6rem 0 0}
+
+/* Bars */
+.bar-row{display:grid;grid-template-columns:minmax(7rem,12rem) 1fr;align-items:center;gap:0.75rem;margin-bottom:0.55rem}
+.bar-row .who{font-size:0.875rem;color:var(--ink-soft);line-height:1.3}
+.bar-track{position:relative;height:24px;display:flex;align-items:center}
+.bar{height:20px;border-radius:0 4px 4px 0;min-width:2px}
+.bar-value{margin-left:0.5rem;font-size:0.9375rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar-value small{font-weight:500;color:var(--ink-soft);margin-left:0.3rem}
+@media (max-width:40rem){.bar-row{grid-template-columns:minmax(0,1fr);gap:0.15rem;margin-bottom:0.8rem}}
+.caveat{font-size:0.9375rem;color:var(--ink-soft);border-left:3px solid var(--line);padding-left:0.9rem;margin:1.25rem 0 0;max-width:70ch}
+
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));gap:1rem;align-items:start}
+.two-col .card + .card{margin-top:0}
+
+/* Charts */
+.chart-wrap{position:relative}
+.chart-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.chart-wrap .axis text,.chart-wrap .annot{font-family:var(--font-body);font-size:12px;fill:var(--ink-faint)}
+.chart-legend{display:flex;flex-wrap:wrap;gap:0.4rem 1.25rem;font-size:0.8125rem;color:var(--ink-soft);margin:0 0 0.5rem}
+.chart-legend span{display:inline-flex;align-items:center;gap:0.45rem}
+.key-line{width:16px;height:2px;border-radius:2px;display:inline-block}
+.key-band{width:16px;height:10px;border-radius:2px;display:inline-block;opacity:0.25}
+.swatch{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+.tooltip{
+  position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:0.5rem 0.7rem;font-size:0.8125rem;line-height:1.45;box-shadow:0 6px 24px -8px rgba(0,0,0,0.25);
+  min-width:11rem;z-index:2;
+}
+.tooltip .th{color:var(--ink-soft);margin-bottom:0.2rem}
+.tooltip .row{display:flex;align-items:center;gap:0.45rem;color:var(--ink-soft)}
+.tooltip .row b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;margin-left:auto;padding-left:0.75rem}
+
+/* Explorer */
+.chips{display:flex;flex-wrap:wrap;gap:0.4rem;margin:0 0 1rem}
+.chip{
+  font:inherit;font-size:0.875rem;color:var(--ink-soft);background:var(--surface);
+  border:1px solid var(--line);border-radius:999px;padding:0.3rem 0.75rem;cursor:pointer;
+  transition:background-color .15s,color .15s,border-color .15s;
+}
+.chip:hover{color:var(--ink);background:var(--surface-alt)}
+.chip[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-wash)}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:0.5rem 1rem;margin:1rem 0 0;padding:0.75rem 0 0;border-top:1px solid var(--line-soft)}
+.facts div{min-width:0}
+.facts dt{font-size:0.8125rem;color:var(--ink-faint)}
+.facts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+
+details.table-view{margin-top:0.75rem}
+details.table-view summary{cursor:pointer;font-size:0.9375rem;color:var(--ink-soft)}
+details.table-view summary:hover{color:var(--ink)}
+.table-scroll{overflow-x:auto;margin-top:0.5rem;max-height:22rem;overflow-y:auto}
+table{border-collapse:collapse;font-size:0.875rem;width:100%;min-width:24rem}
+th,td{text-align:right;padding:0.35rem 0.6rem;border-bottom:1px solid var(--line-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--ink-soft);position:sticky;top:0;background:var(--surface)}
+
+ul.limits{margin:0;padding-left:1.2rem;color:var(--ink-soft);max-width:70ch}
+ul.limits li{margin-bottom:0.5rem}
+
+footer{padding-block:2rem 3rem;color:var(--ink-faint);font-size:0.875rem}
+footer p{margin:0 0 0.4rem;max-width:74ch}
+.loading{color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap">
+    <a href="/">&larr; Reece Milligan</a>
+    <div class="topbar-right">
+      <a href="https://github.com/reecemill/orbit-determination" target="_blank" rel="noopener">Code on GitHub</a>
+      <button class="theme-toggle" type="button" aria-label="Switch to dark mode">
+      <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1z"/></svg>
+      <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
+    </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Orbit determination &amp; trajectory prediction · results</p>
+    <h1>How wrong are public satellite orbits, and how much better can you do?</h1>
+    <p class="lede">
+      Almost everyone outside a satellite's operator tracks it with a TLE, a compressed public
+      orbit run through a simplified model called SGP4. This page measures how wrong TLEs are
+      for ESA's Sentinel-1 radar satellites, finds where the error comes from, removes half of
+      it with a learned correction, and compares an orbit I fitted myself with detailed physics.
+    </p>
+  </header>
+
+  <section aria-labelledby="headline-h">
+    <h2 id="headline-h" hidden>Headline results</h2>
+    <div class="tiles" id="tiles"><p class="loading">Loading…</p></div>
+  </section>
+
+  <section aria-labelledby="growth-h">
+    <h2 id="growth-h">TLEs start wrong and go stale</h2>
+    <p class="section-note">
+      Every TLE published for Sentinel-1C in July 2026, followed for three days and compared with
+      ESA's precise orbit, which is accurate to a few centimetres. A fresh TLE is already off by
+      about half a kilometre: that's how well SGP4's simplified physics can describe the orbit at
+      all. The error barely grows over the first day, then speeds up.
+    </p>
+    <div class="card">
+      <div class="chart-legend" aria-hidden="true">
+        <span><i class="key-line" style="background:var(--s2)"></i>Median TLE</span>
+        <span><i class="key-band" style="background:var(--s2)"></i>Middle 80% of TLEs</span>
+      </div>
+      <div class="chart-wrap" id="growth-chart"></div>
+      <details class="table-view"><summary>Show the numbers</summary><div class="table-scroll" id="growth-table"></div></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="pattern-h">
+    <h2 id="pattern-h">SGP4's blind spot</h2>
+    <p class="section-note">
+      Almost all of the error is along the direction of travel, and most of it isn't random: it's
+      a wave with a period of half a day. SGP4 leaves out that Earth's equator is slightly oval.
+      As Earth turns under the orbit, the two bulges pass beneath it twice a day and nudge the
+      satellite ahead and back. Plotted against where the orbit crosses the equator, the error
+      traces two peaks and two troughs, the same for both satellites.
+    </p>
+    <div class="card">
+      <div class="chart-legend" aria-hidden="true">
+        <span><i class="key-line" style="background:var(--s1)"></i>Sentinel-1C</span>
+        <span><i class="key-line" style="background:var(--s2)"></i>Sentinel-1A</span>
+      </div>
+      <div class="chart-wrap" id="pattern-chart"></div>
+      <p class="caveat">Average over a year of TLEs, August 2025 to July 2026 (June for 1A). Positive means SGP4 puts the satellite ahead of where it really is.</p>
+      <details class="table-view"><summary>Show the numbers</summary><div class="table-scroll" id="pattern-table"></div></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="correct-h">
+    <h2 id="correct-h">Learning the pattern and subtracting it</h2>
+    <p class="section-note">
+      A regular pattern can be learned. Each month from February to July 2026 was corrected by
+      models trained only on earlier months, using nothing but SGP4's own output. Errors are over
+      each TLE's first day.
+    </p>
+    <div class="two-col">
+      <div class="card">
+        <h3>Sentinel-1C, average of six test months</h3>
+        <p class="hint">RMS position error over each TLE's first day</p>
+        <div id="correct-bars"></div>
+        <details class="table-view"><summary>By month</summary><div class="table-scroll" id="correct-table"></div></details>
+      </div>
+      <div class="card">
+        <h3>One July TLE, before and after</h3>
+        <p class="hint">Along-track error over its first day</p>
+        <div class="chart-legend" aria-hidden="true">
+          <span><i class="key-line" style="background:var(--s2)"></i>SGP4</span>
+          <span><i class="key-line" style="background:var(--s1)"></i>Corrected</span>
+        </div>
+        <div class="chart-wrap" id="example-chart"></div>
+        <details class="table-view"><summary>Show the numbers</summary><div class="table-scroll" id="example-table"></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="transfer-h">
+    <h2 id="transfer-h">Borrowing the correction for a sister satellite</h2>
+    <p class="section-note">
+      Training a correction needs the satellite's own precise orbits, which most satellites don't
+      publish. Sentinel-1A flies the same orbit as 1C, so a model trained only on 1C was tested on
+      1A's TLEs, February to June 2026. The wave transfers; a constant along-track offset, different
+      for each satellite, doesn't.
+    </p>
+    <div class="card">
+      <h3>Sentinel-1A, average of five test months</h3>
+      <p class="hint">RMS position error over each TLE's first day</p>
+      <div id="transfer-bars"></div>
+      <details class="table-view"><summary>By month</summary><div class="table-scroll" id="transfer-table"></div></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="od-h">
+    <h2 id="od-h">Determining the orbit myself</h2>
+    <p class="section-note">
+      TLEs are fitted to radar and telescope tracking with SGP4's simplified physics. To see what
+      better physics buys, I simulated radar tracking from four ground stations, fitted an orbit
+      to 48 hours of it with batch least squares, and predicted 72 hours ahead. My propagator
+      models Earth's gravity field to degree 40, the Sun and Moon, and optionally a drag-like
+      acceleration estimated from the data.
+    </p>
+    <div class="card">
+      <h3>Which forces matter</h3>
+      <p class="hint">Starting from the true position and velocity on 10 July 2026, how far each force model drifts</p>
+      <div class="chart-legend" aria-hidden="true">
+        <span><i class="key-line" style="background:var(--s1)"></i>J2 only (Earth's flattening)</span>
+        <span><i class="key-line" style="background:var(--s2)"></i>Gravity to degree 8</span>
+        <span><i class="key-line" style="background:var(--s3)"></i>Gravity to degree 40</span>
+        <span><i class="key-line" style="background:var(--s4)"></i>Degree 40 + Sun and Moon</span>
+      </div>
+      <div class="chart-wrap" id="force-chart"></div>
+      <details class="table-view"><summary>Show the numbers</summary><div class="table-scroll" id="force-table"></div></details>
+    </div>
+
+    <div class="card">
+      <h3>My orbit against the newest TLE</h3>
+      <p class="hint">After the last measurement, compared with the newest TLE published by then. Pick a start date, or the median of all eight.</p>
+      <div class="chips" id="od-chips" role="group" aria-label="Start date"></div>
+      <div class="chart-legend" aria-hidden="true">
+        <span><i class="key-line" style="background:var(--s2)"></i>Newest TLE</span>
+        <span><i class="key-line" style="background:var(--s3)"></i>My orbit, no drag term</span>
+        <span><i class="key-line" style="background:var(--s1)"></i>My orbit, drag term</span>
+      </div>
+      <div class="chart-wrap" id="od-chart"></div>
+      <dl class="facts" id="od-facts"></dl>
+      <details class="table-view"><summary>Medians over the eight dates</summary><div class="table-scroll" id="od-table"></div></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="limits-h">
+    <h2 id="limits-h">What this doesn't show</h2>
+    <ul class="limits">
+      <li>Two satellites in one orbit. A satellite at another altitude or inclination feels the oval equator differently.</li>
+      <li>The tracking is simulated from the true orbit, so it's cleaner than real radar data, and four radars watching one satellite for two days is far more attention than any object gets from real surveillance networks. The comparison shows what the physics is worth, not what an operational system would achieve.</li>
+      <li>Sentinel-1C makes small orbit-keeping burns every week or two. No prediction foresees them; they hurt my orbit and the TLE alike.</li>
+      <li>ESA published no precise orbits for Sentinel-1C from 9 to 18 June 2026, while it raised and lowered its orbit, so that period is left out.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>
+    Data: precise orbits from ESA's Copernicus Sentinel-1 mission (contains modified Copernicus Sentinel data, 2025–2026);
+    TLE history from <a href="https://www.space-track.org" target="_blank" rel="noopener">Space-Track</a>, not redistributed here;
+    the EGM96 gravity model via <a href="https://icgem.gfz.de" target="_blank" rel="noopener">ICGEM</a>; Sun and Moon from JPL's DE421 ephemeris.
+  </p>
+  <p>
+    Method, code and all five notebooks: <a href="https://github.com/reecemill/orbit-determination" target="_blank" rel="noopener">github.com/reecemill/orbit-determination</a>.
+  </p>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (sel) => document.querySelector(sel);
+  const el = (tag, props = {}, ...kids) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") node.className = v;
+      else if (k === "text") node.textContent = v;
+      else if (k === "html") node.innerHTML = v;
+      else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+      else node.setAttribute(k, v);
+    }
+    for (const kid of kids) if (kid != null) node.append(kid);
+    return node;
+  };
+  const SVG = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs = {}) => {
+    const node = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  };
+  const km = (v, d = 2) => (v < 0 ? "−" : "") + Math.abs(v).toFixed(d) + " km";
+  const metres = (v) => Math.round(v * 1000).toLocaleString("en-US") + " m";
+  const m = (v) => Math.round(v).toLocaleString("en-US") + " m";
+  const dist = (v) => (Math.abs(v) < 1 ? metres(v) : km(v));
+  const pct = (v) => Math.round(v * 100) + "%";
+
+  let data, odChoice = "median";
+  const redraws = [];
+
+  fetch("data.json")
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then((d) => { data = d; init(); })
+    .catch(() => $("#tiles").replaceChildren(el("p", { class: "loading", text: "Couldn't load the data. Try reloading the page." })));
+
+  function init() {
+    renderTiles();
+    renderBars("#correct-bars", [
+      { label: "SGP4", value: data.correction.average.sgp4_km, color: "var(--s2)" },
+      { label: "Physics fit (5 numbers per direction)", value: data.correction.average.physics_km, color: "var(--s3)" },
+      { label: "Gradient boosting", value: data.correction.average.boosted_km, color: "var(--s1)" },
+    ], data.correction.average.sgp4_km);
+    renderBars("#transfer-bars", [
+      { label: "SGP4", value: data.transfer.average.none_km, color: "var(--s2)" },
+      { label: "Trained on 1C only", value: data.transfer.average.s1c_only_km, color: "var(--s3)" },
+      { label: "Trained on 1A's own history", value: data.transfer.average.own_km, color: "var(--s1)" },
+    ], data.transfer.average.none_km);
+    renderTables();
+    renderOdChips();
+    redraws.push(drawGrowth, drawPattern, drawExample, drawForces, drawOd);
+    redraws.forEach((f) => f());
+    let timer;
+    new ResizeObserver(() => { clearTimeout(timer); timer = setTimeout(() => redraws.forEach((f) => f()), 120); }).observe($("main"));
+  }
+
+  function renderTiles() {
+    const c = data.correction.average, t = data.transfer.average;
+    const first = data.od.summary[0];
+    const fresh = data.growth.rows[0][2];
+    const tile = (label, value, unit, sub) => el("div", { class: "card tile" },
+      el("p", { class: "label", text: label }),
+      el("p", { class: "value" }, value, unit ? el("small", { text: unit }) : null),
+      el("p", { class: "sub", text: sub }));
+    $("#tiles").replaceChildren(
+      tile("A fresh TLE is already off by", fresh.toFixed(2), "km", "Median for Sentinel-1C's July 2026 TLEs in their first hour, before they've aged."),
+      tile("Error removed by learning SGP4's blind spot", pct(1 - c.boosted_km / c.sgp4_km), null,
+        `${km(c.sgp4_km)} to ${km(c.boosted_km)} RMS over each TLE's first day, on months the model never saw.`),
+      tile("My orbit in the first 6 hours of prediction", Math.round(first.mine_m), "m",
+        `Against ${Math.round(first.tle_m)} m for the newest TLE. Median of eight dates, simulated radar tracking.`),
+      tile("Borrowed by a sister satellite", pct(1 - t.s1c_only_km / t.none_km), null,
+        `Of Sentinel-1A's TLE error removed by a model trained only on Sentinel-1C. Its own history removes ${pct(1 - t.own_km / t.none_km)}.`));
+  }
+
+  function renderBars(sel, items, max) {
+    const base = items[0].value;
+    $(sel).replaceChildren(...items.map((it, i) => el("div", { class: "bar-row" },
+      el("span", { class: "who", text: it.label }),
+      el("div", { class: "bar-track" },
+        el("div", { class: "bar", style: `width:calc((100% - 8.5rem) * ${(it.value / max).toFixed(4)});background:${it.color}` }),
+        el("span", { class: "bar-value" }, km(it.value, 3), i ? el("small", { text: `−${pct(1 - it.value / base)}` }) : null)))));
+  }
+
+  function table(sel, head, rows) {
+    $(sel).replaceChildren(el("table", {},
+      el("thead", {}, el("tr", {}, ...head.map((h) => el("th", { scope: "col", text: h })))),
+      el("tbody", {}, ...rows.map((r) => el("tr", {}, ...r.map((c) => el("td", { text: c })))))));
+  }
+
+  function renderTables() {
+    table("#growth-table", ["Hours since epoch", "10th percentile", "Median", "90th percentile"],
+      data.growth.rows.map((r) => [Math.floor(r[0]) + "–" + Math.ceil(r[0]), km(r[1]), km(r[2]), km(r[3])]));
+    table("#pattern-table", ["Node longitude", "Sentinel-1C", "Sentinel-1A"],
+      data.pattern.rows.map((r) => [r[0] + "°", km(r[1]), km(r[2])]));
+    const c = data.correction;
+    table("#correct-table", ["Month", "Test TLEs", "SGP4", "Physics fit", "Gradient boosting"],
+      c.months.map((m, i) => [m, c.test_tles[i], km(c.sgp4_km[i], 3), km(c.physics_km[i], 3), km(c.boosted_km[i], 3)]));
+    table("#example-table", ["Hours since epoch", "SGP4 along-track", "Corrected"],
+      data.example.rows.map((r) => [r[0].toFixed(2), km(r[1]), km(r[2])]));
+    const t = data.transfer;
+    table("#transfer-table", ["Month", "Test TLEs", "SGP4", "Trained on 1C only", "Trained on 1A"],
+      t.months.map((m, i) => [m, t.test_tles[i], km(t.none_km[i], 3), km(t.s1c_only_km[i], 3), km(t.own_km[i], 3)]));
+    const f = data.force_models;
+    table("#force-table", ["Hours", ...f.columns.slice(1)],
+      f.rows.filter((r, i) => i % 6 === 0).map((r) => [r[0].toFixed(0), ...r.slice(1).map(dist)]));
+    table("#od-table", ["After the last measurement", "Newest TLE", "My orbit, no drag term", "My orbit, drag term", "Dates my orbit wins"],
+      data.od.summary.map((s) => [s.window, m(s.tle_m), m(s.mine_no_drag_m), m(s.mine_m), `${s.wins} of ${s.dates}`]));
+  }
+
+  // One line chart: shared x values across series, optional band, crosshair tooltip, keyboard stepping.
+  function lineChart(wrap, o) {
+    const W = Math.max(300, wrap.clientWidth || 600);
+    const H = o.height || (W < 520 ? 240 : 300);
+    const m = { top: 12, right: 14, bottom: 40, left: 72 };
+    const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+    const xs = o.x.values;
+    const x = (v) => m.left + ((v - o.x.min) / (o.x.max - o.x.min)) * iw;
+    const ly = (v) => o.y.log ? Math.log10(Math.max(v, o.y.min)) : v;
+    const y = (v) => m.top + ih - ((ly(v) - ly(o.y.min)) / (ly(o.y.max) - ly(o.y.min))) * ih;
+
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": o.label });
+    const g = svgEl("g", { class: "axis" });
+    for (const v of o.y.ticks) {
+      g.append(svgEl("line", { x1: m.left, x2: m.left + iw, y1: y(v), y2: y(v), stroke: v === 0 && !o.y.log ? "var(--line)" : "var(--line-soft)", "stroke-width": 1 }));
+      const t = svgEl("text", { x: m.left - 8, y: y(v) + 4, "text-anchor": "end" });
+      t.textContent = o.y.fmt(v);
+      g.append(t);
+    }
+    const yl = svgEl("text", { transform: `translate(11 ${m.top + ih / 2}) rotate(-90)`, "text-anchor": "middle" });
+    yl.textContent = o.y.label;
+    g.append(yl);
+    g.append(svgEl("line", { x1: m.left, x2: m.left + iw, y1: m.top + ih, y2: m.top + ih, stroke: "var(--line)", "stroke-width": 1 }));
+    for (const v of o.x.ticks) {
+      const t = svgEl("text", { x: x(v), y: m.top + ih + 18, "text-anchor": "middle" });
+      t.textContent = o.x.fmt(v);
+      g.append(t);
+    }
+    const xl = svgEl("text", { x: m.left + iw / 2, y: H - 4, "text-anchor": "middle" });
+    xl.textContent = W < 560 && o.x.short ? o.x.short : o.x.label;
+    g.append(xl);
+    svg.append(g);
+
+    const path = (vals) => vals.map((v, i) => `${i ? "L" : "M"}${x(xs[i]).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    if (o.band) {
+      const top = o.band.hi.map((v, i) => `${i ? "L" : "M"}${x(xs[i]).toFixed(1)},${y(v).toFixed(1)}`).join("");
+      const bottom = o.band.lo.map((v, i) => [x(xs[i]), y(v)]).reverse().map(([a, b]) => `L${a.toFixed(1)},${b.toFixed(1)}`).join("");
+      svg.append(svgEl("path", { d: top + bottom + "Z", fill: o.band.color, opacity: 0.18 }));
+    }
+    for (const s of o.series) {
+      svg.append(svgEl("path", { d: path(s.values), fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    }
+
+    const cross = svgEl("line", { y1: m.top, y2: m.top + ih, stroke: "var(--ink-faint)", "stroke-width": 1, visibility: "hidden" });
+    const dots = o.series.map((s) => svgEl("circle", { r: 4.5, fill: s.color, stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" }));
+    svg.append(cross, ...dots);
+    const hit = svgEl("rect", { x: m.left, y: m.top, width: iw, height: ih, fill: "transparent", tabindex: "0",
+      "aria-label": "Chart hover area. Use the left and right arrow keys to step along it; the full numbers are in the table below." });
+    svg.append(hit);
+
+    const tip = el("div", { class: "tooltip", hidden: "" });
+    let idx = 0;
+    const show = (i) => {
+      const px = x(xs[i]);
+      cross.setAttribute("x1", px); cross.setAttribute("x2", px); cross.setAttribute("visibility", "visible");
+      o.series.forEach((s, k) => { dots[k].setAttribute("cx", px); dots[k].setAttribute("cy", y(s.values[i])); dots[k].setAttribute("visibility", "visible"); });
+      tip.replaceChildren(el("div", { class: "th", text: o.x.tip(xs[i]) }),
+        ...(o.band ? [el("div", { class: "row" }, el("i", { class: "key-band", style: `background:${o.band.color}` }), o.band.name, el("b", { text: `${o.y.tipFmt(o.band.lo[i])} to ${o.y.tipFmt(o.band.hi[i])}` }))] : []),
+        ...o.series.map((s) => el("div", { class: "row" }, el("i", { class: "key-line", style: `background:${s.color}` }), s.name, el("b", { text: o.y.tipFmt(s.values[i]) }))));
+      tip.hidden = false;
+      const scale = wrap.clientWidth / W;
+      const tw = tip.offsetWidth, sx = px * scale;
+      let left = sx + 14; if (left + tw > wrap.clientWidth) left = sx - tw - 14;
+      tip.style.left = Math.max(0, left) + "px";
+      tip.style.top = (m.top * scale) + "px";
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dots.forEach((d) => d.setAttribute("visibility", "hidden")); };
+    const nearest = (clientX) => {
+      const r = svg.getBoundingClientRect();
+      const px = ((clientX - r.left) / r.width) * W;
+      let best = 0, bd = Infinity;
+      xs.forEach((v, i) => { const d = Math.abs(x(v) - px); if (d < bd) { bd = d; best = i; } });
+      return best;
+    };
+    hit.addEventListener("pointermove", (ev) => { idx = nearest(ev.clientX); show(idx); });
+    hit.addEventListener("pointerleave", hide);
+    hit.addEventListener("focus", () => show(idx));
+    hit.addEventListener("blur", hide);
+    hit.addEventListener("keydown", (ev) => {
+      const step = Math.max(1, Math.round(xs.length / 60));
+      if (ev.key === "ArrowLeft") { idx = Math.max(0, idx - step); show(idx); ev.preventDefault(); }
+      if (ev.key === "ArrowRight") { idx = Math.min(xs.length - 1, idx + step); show(idx); ev.preventDefault(); }
+      if (ev.key === "Escape") hide();
+    });
+    wrap.replaceChildren(svg, tip);
+  }
+
+  const col = (rows, i) => rows.map((r) => r[i]);
+  const niceTicks = (lo, hi, n = 5) => {
+    const raw = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map((s) => s * mag).find((s) => s >= raw);
+    const out = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(Math.round(v / step) * step);
+    return out;
+  };
+  const hoursAxis = (max, label) => ({ min: 0, max, ticks: [0, 12, 24, 36, 48, 60, 72].filter((v) => v <= max), label,
+    fmt: (v) => String(v), tip: (v) => `${v.toFixed(1)} h` });
+
+  function drawGrowth() {
+    const r = data.growth.rows, hi = Math.max(...col(r, 3));
+    lineChart($("#growth-chart"), {
+      label: "Median TLE position error rises from about half a kilometre to over a kilometre across three days; the middle 80% of TLEs widens from about 0.2–1 km to 0.4–2.4 km. Numbers in the table below.",
+      x: { ...hoursAxis(72, "Hours since the TLE's epoch"), values: col(r, 0), tip: (v) => `${Math.floor(v)}–${Math.ceil(v)} h after epoch` },
+      y: { min: 0, max: hi * 1.05, ticks: niceTicks(0, hi), label: "Position error (km)", fmt: (v) => v.toFixed(1), tipFmt: (v) => km(v) },
+      band: { lo: col(r, 1), hi: col(r, 3), color: "var(--s2)", name: "Middle 80%" },
+      series: [{ name: "Median", color: "var(--s2)", values: col(r, 2) }],
+    });
+  }
+
+  function drawPattern() {
+    const r = data.pattern.rows;
+    const all = [...col(r, 1), ...col(r, 2)], lo = Math.min(...all), hi = Math.max(...all);
+    lineChart($("#pattern-chart"), {
+      label: "Average along-track error against the longitude where the orbit crosses the equator: two peaks near −140° and +40° and two troughs near −50° and +120°, about 1.8 km from trough to peak, with Sentinel-1A's curve the same shape about 0.17 km lower. Numbers in the table below.",
+      x: { min: -180, max: 180, values: col(r, 0), ticks: [-180, -120, -60, 0, 60, 120, 180], label: "Longitude where the orbit crosses the equator northbound (degrees)", short: "Equator-crossing longitude",
+        fmt: (v) => (v < 0 ? "−" : "") + Math.abs(v) + "°", tip: (v) => `Crossing the equator at ${v < 0 ? "−" : ""}${Math.abs(v)}°` },
+      y: { min: lo - 0.1, max: hi + 0.1, ticks: niceTicks(lo - 0.1, hi + 0.1), label: "Along-track error (km)", fmt: (v) => (v < 0 ? "−" : "") + Math.abs(v).toFixed(1), tipFmt: (v) => km(v) },
+      series: [
+        { name: "Sentinel-1C", color: "var(--s1)", values: col(r, 1) },
+        { name: "Sentinel-1A", color: "var(--s2)", values: col(r, 2) },
+      ],
+    });
+  }
+
+  function drawExample() {
+    const r = data.example.rows;
+    const all = [...col(r, 1), ...col(r, 2)], lo = Math.min(...all), hi = Math.max(...all);
+    lineChart($("#example-chart"), {
+      height: 260,
+      label: "For one July TLE, SGP4's along-track error swings between about −1 and +1.3 km over its first day; after correction it stays within about ±0.3 km. Numbers in the table below.",
+      x: { min: 0, max: 24, values: col(r, 0), ticks: [0, 6, 12, 18, 24], label: "Hours since the TLE's epoch", fmt: String, tip: (v) => `${v.toFixed(1)} h after epoch` },
+      y: { min: lo - 0.1, max: hi + 0.1, ticks: niceTicks(lo - 0.1, hi + 0.1, 4), label: "Along-track error (km)", fmt: (v) => (v < 0 ? "−" : "") + Math.abs(v).toFixed(1), tipFmt: (v) => km(v) },
+      series: [
+        { name: "SGP4", color: "var(--s2)", values: col(r, 1) },
+        { name: "Corrected", color: "var(--s1)", values: col(r, 2) },
+      ],
+    });
+  }
+
+  function drawForces() {
+    const f = data.force_models, r = f.rows.slice(1);
+    const colors = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];
+    lineChart($("#force-chart"), {
+      label: "Starting from the true state, J2 alone drifts to about 5 km after a day, gravity to degree 8 about 1.3 km, degree 40 about 280 m, and degree 40 with the Sun and Moon about 200 m. Numbers in the table below.",
+      x: { ...hoursAxis(72, "Hours after starting from the true position and velocity"), short: "Hours from the true starting state", values: col(r, 0) },
+      y: { log: true, min: 0.001, max: 100, ticks: [0.001, 0.01, 0.1, 1, 10, 100], label: "Position error (log scale)",
+        fmt: (v) => (v < 1 ? v * 1000 + " m" : v + " km"), tipFmt: dist },
+      series: f.columns.slice(1).map((name, i) => ({ name, color: colors[i], values: col(r, i + 1) })),
+    });
+  }
+
+  function renderOdChips() {
+    const dates = [...new Set(data.od.runs.map((r) => r.start))];
+    const chip = (key, text) => el("button", { class: "chip", type: "button", "aria-pressed": String(key === odChoice), text,
+      onclick: () => { odChoice = key; renderOdChips(); drawOd(); } });
+    $("#od-chips").replaceChildren(chip("median", "Median of 8 dates"), ...dates.map((d) => chip(d, d)));
+  }
+
+  function drawOd() {
+    const runs = data.od.runs;
+    const pick = (drag) => odChoice === "median"
+      ? medianRuns(runs.filter((r) => r.drag === drag))
+      : runs.find((r) => r.drag === drag && r.start === odChoice).hourly;
+    const withDrag = pick(true), noDrag = pick(false);
+    const hours = col(withDrag, 0).map((h) => h + 0.5);
+    const all = [...col(withDrag, 1), ...col(withDrag, 2), ...col(noDrag, 1)];
+    const hi = Math.max(...all) * 1000;
+    lineChart($("#od-chart"), {
+      label: `Position error after the last measurement for ${odChoice === "median" ? "the median of eight start dates" : "tracking starting " + odChoice}: newest TLE, my orbit without and with the drag term. Numbers in the table below.`,
+      x: { ...hoursAxis(72, "Hours after the last measurement"), values: hours, tip: (v) => `${Math.floor(v)}–${Math.ceil(v)} h after the last measurement` },
+      y: { min: 0, max: hi * 1.05, ticks: niceTicks(0, hi), label: "Position error (m)", fmt: (v) => v.toLocaleString("en-US"), tipFmt: (v) => Math.round(v).toLocaleString("en-US") + " m" },
+      series: [
+        { name: "Newest TLE", color: "var(--s2)", values: col(withDrag, 2).map((v) => v * 1000) },
+        { name: "My orbit, no drag term", color: "var(--s3)", values: col(noDrag, 1).map((v) => v * 1000) },
+        { name: "My orbit, drag term", color: "var(--s1)", values: col(withDrag, 1).map((v) => v * 1000) },
+      ],
+    });
+
+    const facts = [];
+    if (odChoice === "median") {
+      const s = data.od.summary;
+      facts.push(["First 6 hours: my orbit", m(s[0].mine_m)], ["First 6 hours: newest TLE", m(s[0].tle_m)],
+        ["Dates my orbit wins, 6–24 h", `${s[1].wins} of ${s[1].dates}`], ["Dates my orbit wins, 2–3 days", `${s[3].wins} of ${s[3].dates}`]);
+    } else {
+      const w = data.od.windows[odChoice];
+      const d = runs.find((r) => r.drag && r.start === odChoice), n = runs.find((r) => !r.drag && r.start === odChoice);
+      facts.push(["First 6 hours: my orbit", m(w.mine_m[0])], ["First 6 hours: newest TLE", m(w.tle_m[0])],
+        ["Fit residual, drag term", d.residual.toFixed(2)], ["Fit residual, no drag term", n.residual.toFixed(2)],
+        ["Newest TLE's age at the last measurement", d.tle_age_hours.toFixed(0) + " h"]);
+    }
+    $("#od-facts").replaceChildren(...facts.map(([k, v]) => el("div", {}, el("dt", { text: k }), el("dd", { text: v }))));
+  }
+
+  function medianRuns(list) {
+    const med = (vals) => { const s = [...vals].sort((a, b) => a - b), k = s.length >> 1; return s.length % 2 ? s[k] : (s[k - 1] + s[k]) / 2; };
+    return list[0].hourly.map((row, i) => [row[0], med(list.map((r) => r.hourly[i][1])), med(list.map((r) => r.hourly[i][2]))]);
+  }
+})();
+</script>
+<script>
+(() => {
+  const root = document.documentElement, toggle = document.querySelector(".theme-toggle");
+  const system = window.matchMedia("(prefers-color-scheme: dark)");
+  const mode = () => root.getAttribute("data-theme") || (system.matches ? "dark" : "light");
+  const sync = () => {
+    toggle.setAttribute("data-mode", mode());
+    toggle.setAttribute("aria-label", mode() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  };
+  toggle.addEventListener("click", () => {
+    const next = mode() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    sync();
+  });
+  system.addEventListener("change", sync);
+  sync();
+})();
+</script>
+</body>
+</html>
