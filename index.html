@@ -721,16 +721,17 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
           <p>
             The model is a logistic regression on each fighter's UFC record and Elo rating, plus
             striking and grappling stats rebuilt fight by fight from ufcstats.com, and age, all
-            from fights before the one being predicted. Tested once on 1,300 fights it never saw,
-            it picks 63.6% of winners: 3.8 points more than the version without fight stats, and
-            3.4 more than backing the fighter with the better record, both beyond chance. Gradient
-            boosting and a small neural network, given the same features, did no better. An early
-            version picked 71%, which turned out to be duplicate events in the source data leaking
-            results into the history.
+            from fights before the one being predicted, with weights learned from the modern era
+            (fights since 2010). Tested once on 1,300 fights it never saw, it picks 64.6% of
+            winners: 4.8 points more than the version without fight stats, and 4.4 more than
+            backing the fighter with the better record, both beyond chance. Gradient boosting and
+            a small neural network, given the same choices, did worse. An early version picked 71%,
+            which turned out to be duplicate events in the source data leaking results into the
+            history.
           </p>
           <dl class="stats">
             <div class="stat"><dt>Test fights</dt><dd>1,300</dd></div>
-            <div class="stat"><dt>Winners picked</dt><dd>63.6%</dd></div>
+            <div class="stat"><dt>Winners picked</dt><dd>64.6%</dd></div>
             <div class="stat"><dt>Old model</dt><dd>59.8%</dd></div>
             <div class="stat"><dt>Win-rate rule</dt><dd>60.2%</dd></div>
           </dl>
