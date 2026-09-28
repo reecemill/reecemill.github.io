@@ -674,7 +674,7 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
           <dl class="stats">
             <div class="stat"><dt>TLE error removed</dt><dd>51%</dd></div>
             <div class="stat"><dt>Sister satellite</dt><dd>27%</dd></div>
-            <div class="stat"><dt>My orbit, first 6 h</dt><dd>23 m</dd></div>
+            <div class="stat"><dt>My orbit, 6 h</dt><dd>23 m</dd></div>
             <div class="stat"><dt>Newest TLE</dt><dd>549 m</dd></div>
           </dl>
           <ul class="tags">
@@ -698,6 +698,58 @@ footer .btn:hover{box-shadow:0 4px 14px -6px var(--ground)}
             <li>A correction is only worth anything on data it never saw, so every month is tested on models trained only on earlier months.</li>
             <li>Satellites make small, unannounced burns every week or two, which no prediction foresees.</li>
             <li>One test date made the drag term look harmful; across eight dates it's clearly better, so every result is checked across months or dates.</li>
+          </ul>
+        </aside>
+      </article>
+
+      <article class="project">
+        <div class="project-main">
+          <div class="project-top">
+            <h3>MMA-HUB</h3>
+            <span class="status status--done">Complete</span>
+          </div>
+          <p class="lede">
+            Every UFC fighter and event since UFC 1, with a model that predicts fights,
+            including dream matchups between any two fighters.
+          </p>
+          <p>
+            A .NET scraper pulls fighters, events and bouts from the Cito API into Postgres,
+            and an ASP.NET Core site shows records, career stats, every card with results, and
+            the model's pick for each bout. The public demo runs on a read-only SQLite snapshot
+            in a Docker container on Hugging Face.
+          </p>
+          <p>
+            The model is a logistic regression on each fighter's UFC history (an Elo rating, win
+            rate, recent form, finishes, activity), built only from fights before the one being
+            predicted. Tested once on 1,300 fights it never saw, it picks 59.8% of winners, no
+            better than backing the fighter with the better win rate, but its probabilities are
+            calibrated: when it gives the favorite 60–70%, the favorite wins 67% of the time. An
+            early version picked 71%, which turned out to be duplicate events in the source data
+            leaking results into the history.
+          </p>
+          <dl class="stats">
+            <div class="stat"><dt>Fighters</dt><dd>3,311</dd></div>
+            <div class="stat"><dt>Test fights</dt><dd>1,300</dd></div>
+            <div class="stat"><dt>Winners picked</dt><dd>59.8%</dd></div>
+            <div class="stat"><dt>Win-rate rule</dt><dd>60.2%</dd></div>
+          </dl>
+          <ul class="tags">
+            <li>C#</li><li>ASP.NET Core</li><li>PostgreSQL</li><li>Python</li>
+            <li>scikit-learn</li><li>Logistic regression</li><li>Elo ratings</li><li>Docker</li>
+          </ul>
+          <div class="project-links">
+            <a class="btn" href="https://rmill-mma-hub.hf.space" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 7 9M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg>
+              <span>Try the live demo</span>
+            </a>
+          </div>
+        </div>
+        <aside class="note" aria-label="Why it's hard">
+          <h4>Why it's hard</h4>
+          <ul>
+            <li>Fights are noisy: backing the fighter with the better record already picks 60% of winners.</li>
+            <li>Every feature must come from earlier fights, or the model quietly learns the result it's predicting.</li>
+            <li>The source lists many events twice under different names, which had to be caught before any result could be trusted.</li>
           </ul>
         </aside>
       </article>
